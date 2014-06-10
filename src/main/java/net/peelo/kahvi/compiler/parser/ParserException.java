@@ -5,51 +5,42 @@ import net.peelo.kahvi.compiler.ast.SourcePosition;
 public final class ParserException extends RuntimeException
     implements SourcePosition
 {
-    private final SourcePosition sourcePosition;
+    private final int lineNumber;
+    private final int columnNumber;
 
-    ParserException(SourcePosition sourcePosition, String message)
+    ParserException(String message, int lineNumber, int columnNumber)
     {
         super(message);
-        this.sourcePosition = sourcePosition;
+        this.lineNumber = lineNumber;
+        this.columnNumber = columnNumber;
     }
 
     @Override
     public String getMessage()
     {
-        if (this.sourcePosition != null)
+        StringBuilder sb = new StringBuilder();
+
+        if (this.lineNumber > 0)
         {
-            StringBuilder sb = new StringBuilder();
-
-            sb.append("Line: ")
-              .append(this.sourcePosition.getLineNumber())
-              .append(", Column: ").append(this.sourcePosition.getColumnNumber())
-              .append(": ").append(super.getMessage());
-
-            return sb.toString();
+            sb.append("Line: ").append(this.lineNumber).append(": ");
         }
-
-        return super.getMessage();
+        if (this.columnNumber > 0)
+        {
+            sb.append("Column: ").append(this.columnNumber).append(": ");
+        }
+        
+        return sb.append(super.getMessage()).toString();
     }
 
     @Override
     public int getLineNumber()
     {
-        if (this.sourcePosition == null)
-        {
-            return 0;
-        } else {
-            return this.sourcePosition.getLineNumber();
-        }
+        return this.lineNumber;
     }
 
     @Override
     public int getColumnNumber()
     {
-        if (this.sourcePosition == null)
-        {
-            return 0;
-        } else {
-            return this.sourcePosition.getColumnNumber();
-        }
+        return this.columnNumber;
     }
 }
