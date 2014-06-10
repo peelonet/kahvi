@@ -3,22 +3,11 @@ AST
 
 Statements
 ----------
-- Assert
-- Case
 - Catch
-- DoWhile
 - EnhancedFor
-- Expression
 - For
-- If
-- Labeled
-- Return
-- Switch
-- Synchronized
-- Throw
 - Try
 - Variable
-- While
 
 Expressions
 -----------
