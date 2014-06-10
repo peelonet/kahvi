@@ -1,4 +1,6 @@
 *.class
+/build
+/javadoc
 
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
