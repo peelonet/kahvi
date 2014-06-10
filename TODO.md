@@ -5,7 +5,6 @@ Statements
 ----------
 - Catch
 - EnhancedFor
-- For
 - Try
 - Variable
 

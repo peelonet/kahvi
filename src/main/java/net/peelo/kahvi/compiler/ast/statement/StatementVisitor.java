@@ -10,6 +10,7 @@ public interface StatementVisitor<R, P>
     R visitDoWhileStatement(DoWhileStatement s, P p);
     R visitEmptyStatement(EmptyStatement s, P p);
     R visitExpressionStatement(ExpressionStatement s, P p);
+    R visitForStatement(ForStatement s, P p);
     R visitIfStatement(IfStatement s, P p);
     R visitLabeledStatement(LabeledStatement s, P p);
     R visitReturnStatement(ReturnStatement s, P p);
