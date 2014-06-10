@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="kahvi" default="jar">
+
+  <property name="dir.src" value="src" />
+  <property name="dir.build" value="build" />
+  <property name="dir.dist" value="${dir.build}/dist" />
+  <property name="dir.javadoc" value="javadoc" />
+
+  <target name="compile">
+    <mkdir dir="${dir.build}/java" />
+    <javac
+      srcdir="${dir.src}/main/java"
+      destdir="${dir.build}/java"
+      debug="on" />
+  </target>
+
+  <target name="jar" depends="compile">
+    <jar destfile="${dir.dist}/${ant.project.name}.jar">
+      <fileset dir="${dir.build}/java" />
+      <manifest>
+        <attribute name="Main-Class" value="net.peelo.kahvi.compiler.Main" />
+      </manifest>
+    </jar>
+  </target>
+
+  <target name="clean">
+    <delete dir="${dir.build}" />
+  </target>
+
+  <target name="javadoc">
+    <mkdir dir="${dir.javadoc}" />
+    <javadoc
+      packagenames="*"
+      sourcepath="${dir.src}/main/java"
+      destdir="${dir.javadoc}"
+      author="true"
+      version="true">
+      <link href="http://download.oracle.com/javase/7/docs/api/" />
+    </javadoc>
+  </target>
+  
+</project>
