@@ -4,10 +4,8 @@ AST
 Statements
 ----------
 - Assert
-- Break
 - Case
 - Catch
-- Continue
 - DoWhile
 - EnhancedFor
 - Expression
