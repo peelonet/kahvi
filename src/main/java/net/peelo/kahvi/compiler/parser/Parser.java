@@ -7,6 +7,7 @@ import net.peelo.kahvi.compiler.ast.annotation.*;
 import net.peelo.kahvi.compiler.ast.declaration.*;
 import net.peelo.kahvi.compiler.ast.expression.*;
 import net.peelo.kahvi.compiler.ast.statement.*;
+import net.peelo.kahvi.compiler.ast.type.*;
 import net.peelo.kahvi.compiler.util.Name;
 import net.peelo.kahvi.compiler.util.SourceLocatable;
 import net.peelo.kahvi.compiler.util.SourcePosition;
@@ -569,7 +570,170 @@ public final class Parser implements SourceLocatable
     private Atom parseRelationalExpression()
         throws ParserException, IOException
     {
-        throw this.error("TODO: parse relational expression");
+        Atom atom = this.parseShiftExpression();
+
+        for (;;)
+        {
+            if (this.scanner.peek().is(
+                        Token.Kind.LT,
+                        Token.Kind.GT,
+                        Token.Kind.LTE,
+                        Token.Kind.GTE))
+            {
+                Token.Kind kind = this.scanner.read().getKind();
+
+                atom = new BinaryExpression(
+                        atom.getSourcePosition(),
+                        this.toExpression(atom),
+                        kind == Token.Kind.LT ? BinaryExpression.Kind.LT :
+                        kind == Token.Kind.GT ? BinaryExpression.Kind.GT :
+                        kind == Token.Kind.LTE ? BinaryExpression.Kind.LTE :
+                        BinaryExpression.Kind.GTE,
+                        this.toExpression(this.parseShiftExpression())
+                );
+            }
+            else if (this.scanner.peek().is(Token.Kind.KEYWORD_INSTANCEOF))
+            {
+                atom = new InstanceOfExpression(
+                        atom.getSourcePosition(),
+                        this.toExpression(atom),
+                        this.parseReferenceType()
+                );
+            } else {
+                return atom;
+            }
+        }
+    }
+
+    /**
+     * <pre>
+     *   ShiftExpression:
+     *     AdditiveExpression
+     *     ShiftExpression &lt;&lt; AdditiveExpression
+     *     ShiftExpression &gt;&gt; AdditiveExpression
+     *     ShiftExpression &gt;&gt;&gt; AdditiveExpression
+     * </pre>
+     */
+    private Atom parseShiftExpression()
+        throws ParserException, IOException
+    {
+        Atom atom = this.parseAdditiveExpression();
+
+        while (this.scanner.peek().is(
+                    Token.Kind.LSH,
+                    Token.Kind.RSH,
+                    Token.Kind.RSH2))
+        {
+            Token.Kind kind = this.scanner.read().getKind();
+
+            atom = new BinaryExpression(
+                    atom.getSourcePosition(),
+                    this.toExpression(atom),
+                    kind == Token.Kind.LSH ? BinaryExpression.Kind.LSH :
+                    kind == Token.Kind.RSH ? BinaryExpression.Kind.RSH :
+                    BinaryExpression.Kind.RSH2,
+                    this.toExpression(this.parseAdditiveExpression())
+            );
+        }
+
+        return atom;
+    }
+
+    /**
+     * <pre>
+     *   AdditiveExpression:
+     *     MultiplicativeExpression
+     *     AdditiveExpression + MultiplicativeExpression
+     *     AdditiveExpression - MultiplicativeExpression
+     * </pre>
+     */
+    private Atom parseAdditiveExpression()
+        throws ParserException, IOException
+    {
+        Atom atom = this.parseMultiplicativeExpression();
+
+        while (this.scanner.peek().is(Token.Kind.ADD, Token.Kind.SUB))
+        {
+            Token.Kind kind = this.scanner.read().getKind();
+
+            atom = new BinaryExpression(
+                    atom.getSourcePosition(),
+                    this.toExpression(atom),
+                    kind == Token.Kind.ADD ? BinaryExpression.Kind.ADD :
+                    BinaryExpression.Kind.SUB,
+                    this.toExpression(this.parseMultiplicativeExpression())
+            );
+        }
+
+        return atom;
+    }
+
+    /**
+     * <pre>
+     *   MultiplicativeExpression:
+     *     UnaryExpression
+     *     MultiplicativeExpression * UnaryExpression
+     *     MultiplicativeExpression / UnaryExpression
+     *     MultiplicativeExpression % UnaryExpression
+     * </pre>
+     */
+    private Atom parseMultiplicativeExpression()
+        throws ParserException, IOException
+    {
+        Atom atom = this.parseUnaryExpression();
+
+        while (this.scanner.peek().is(
+                    Token.Kind.MUL,
+                    Token.Kind.DIV,
+                    Token.Kind.MOD))
+        {
+            Token.Kind kind = this.scanner.read().getKind();
+
+            atom = new BinaryExpression(
+                    atom.getSourcePosition(),
+                    this.toExpression(atom),
+                    kind == Token.Kind.MUL ? BinaryExpression.Kind.MUL :
+                    kind == Token.Kind.DIV ? BinaryExpression.Kind.DIV :
+                    BinaryExpression.Kind.MOD,
+                    this.toExpression(this.parseUnaryExpression())
+            );
+        }
+
+        return atom;
+    }
+
+    /**
+     * <pre>
+     *   UnaryExpression:
+     *     PreIncrementExpression
+     *     PreDecrementExpression
+     *     + UnaryExpression
+     *     - UnaryExpression
+     *     UnaryExpressionNotPlusMinus
+     *
+     *   PreIncrementExpression:
+     *     ++ UnaryExpression
+     *
+     *   PreDecrementExpression:
+     *     -- UnaryExpression
+     *
+     *   UnaryExpressionNotPlusMinus:
+     *     PostfixExpression
+     *     ~ UnaryExpression
+     *     ! UnaryExpression
+     *     CastExpression
+     * </pre>
+     */
+    private Atom parseUnaryExpression()
+        throws ParserException, IOException
+    {
+        throw this.error("TODO: parse unary expression");
+    }
+
+    private ReferenceType parseReferenceType()
+        throws ParserException, IOException
+    {
+        throw this.error("TODO: parse reference type");
     }
 
     private Expression toExpression(Atom atom)
