@@ -1,6 +1,7 @@
 package net.peelo.kahvi.compiler.ast.statement;
 
 import net.peelo.kahvi.compiler.ast.expression.Expression;
+import net.peelo.kahvi.compiler.util.SourcePosition;
 
 /**
  * Representation of an expression statement.
@@ -14,11 +15,9 @@ public final class ExpressionStatement extends Statement
 {
     private final Expression expression;
 
-    public ExpressionStatement(Expression expression,
-                               int lineNumber,
-                               int columnNumber)
+    public ExpressionStatement(SourcePosition position, Expression expression)
     {
-        super(lineNumber, columnNumber);
+        super(position);
         (this.expression = expression).setEnclosingScope(this);
     }
 

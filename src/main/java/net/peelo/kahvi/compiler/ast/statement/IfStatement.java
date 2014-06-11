@@ -1,6 +1,7 @@
 package net.peelo.kahvi.compiler.ast.statement;
 
 import net.peelo.kahvi.compiler.ast.expression.Expression;
+import net.peelo.kahvi.compiler.util.SourcePosition;
 
 /**
  * Representation of an 'if' statement.
@@ -22,21 +23,19 @@ public final class IfStatement extends Statement
     private final Statement thenStatement;
     private final Statement elseStatement;
 
-    public IfStatement(Expression condition,
-                       Statement thenStatement,
-                       int lineNumber,
-                       int columnNumber)
+    public IfStatement(SourcePosition position,
+                       Expression condition,
+                       Statement thenStatement)
     {
-        this(condition, thenStatement, null, lineNumber, columnNumber);
+        this(position, condition, thenStatement, null);
     }
 
-    public IfStatement(Expression condition,
+    public IfStatement(SourcePosition position,
+                       Expression condition,
                        Statement thenStatement,
-                       Statement elseStatement,
-                       int lineNumber,
-                       int columnNumber)
+                       Statement elseStatement)
     {
-        super(lineNumber, columnNumber);
+        super(position);
         (this.condition = condition).setEnclosingScope(this);
         (this.thenStatement = thenStatement).setEnclosingScope(this);
         if ((this.elseStatement = elseStatement) != null)

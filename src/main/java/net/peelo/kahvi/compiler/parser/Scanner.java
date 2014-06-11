@@ -1,11 +1,12 @@
 package net.peelo.kahvi.compiler.parser;
 
-import net.peelo.kahvi.compiler.ast.SourcePosition;
+import net.peelo.kahvi.compiler.util.SourceLocatable;
+import net.peelo.kahvi.compiler.util.SourcePosition;
 
 import java.io.IOException;
 import java.io.Reader;
 
-public final class Scanner implements SourcePosition
+public final class Scanner implements SourceLocatable
 {
     private final Reader input;
     private int nextChar;
@@ -23,15 +24,9 @@ public final class Scanner implements SourcePosition
     }
 
     @Override
-    public int getLineNumber()
+    public SourcePosition getSourcePosition()
     {
-        return this.lineNumber;
-    }
-
-    @Override
-    public int getColumnNumber()
-    {
-        return this.columnNumber;
+        return new SourcePosition(this.lineNumber, this.columnNumber);
     }
 
     /**
@@ -90,7 +85,7 @@ public final class Scanner implements SourcePosition
 
         if (token.getKind() != kind)
         {
-            throw this.error("unexpected %s; missing %s", token, kind);
+            throw this.error(token, "unexpected %s; missing %s", token, kind);
         }
     }
 
@@ -434,6 +429,23 @@ public final class Scanner implements SourcePosition
             message = String.format(message, (Object[]) args);
         }
 
-        return new ParserException(message, this.lineNumber, this.columnNumber);
+        return new ParserException(this.getSourcePosition(), message);
+    }
+
+    private ParserException error(SourceLocatable location,
+                                  String message,
+                                  Object... args)
+    {
+        if (args != null && args.length > 0)
+        {
+            message = String.format(message, (Object[]) args);
+        }
+
+        return new ParserException(
+                location == null
+                ? this.getSourcePosition()
+                : location.getSourcePosition(),
+                message
+        );
     }
 }

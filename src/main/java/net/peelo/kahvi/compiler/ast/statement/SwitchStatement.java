@@ -1,6 +1,7 @@
 package net.peelo.kahvi.compiler.ast.statement;
 
 import net.peelo.kahvi.compiler.ast.expression.Expression;
+import net.peelo.kahvi.compiler.util.SourcePosition;
 
 import java.util.List;
 
@@ -19,12 +20,11 @@ public final class SwitchStatement extends BreakableStatement
     private final Expression expression;
     private final List<CaseStatement> cases;
 
-    public SwitchStatement(Expression expression,
-                           List<CaseStatement> cases,
-                           int lineNumber,
-                           int columnNumber)
+    public SwitchStatement(SourcePosition position,
+                           Expression expression,
+                           List<CaseStatement> cases)
     {
-        super(lineNumber, columnNumber);
+        super(position);
         (this.expression = expression).setEnclosingScope(this);
         for (Statement s : (this.cases = cases))
         {

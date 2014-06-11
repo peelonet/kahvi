@@ -1,9 +1,11 @@
 package net.peelo.kahvi.compiler.ast.type;
 
+import net.peelo.kahvi.compiler.util.SourcePosition;
+
 public abstract class ReferenceType extends Type
 {
-    public ReferenceType(int lineNumber, int columnNumber)
+    public ReferenceType(SourcePosition position)
     {
-        super(lineNumber, columnNumber);
+        super(position);
     }
 }

@@ -4,6 +4,7 @@ import net.peelo.kahvi.compiler.ast.Node;
 import net.peelo.kahvi.compiler.ast.Scope;
 import net.peelo.kahvi.compiler.ast.annotation.Annotation;
 import net.peelo.kahvi.compiler.util.Name;
+import net.peelo.kahvi.compiler.util.SourcePosition;
 
 import java.util.List;
 
@@ -22,12 +23,11 @@ public final class PackageDeclaration extends Node
     /** Name of the package. */
     private final Name packageName;
 
-    public PackageDeclaration(List<Annotation> annotations,
-                              Name packageName,
-                              int lineNumber,
-                              int columnNumber)
+    public PackageDeclaration(SourcePosition position,
+                              List<Annotation> annotations,
+                              Name packageName)
     {
-        super(lineNumber, columnNumber);
+        super(position);
         this.annotations = annotations;
         this.packageName = packageName;
     }

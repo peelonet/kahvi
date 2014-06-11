@@ -1,6 +1,7 @@
 package net.peelo.kahvi.compiler.ast.statement;
 
 import net.peelo.kahvi.compiler.ast.expression.Expression;
+import net.peelo.kahvi.compiler.util.SourcePosition;
 
 /**
  * Representation of a 'while' loop statement.
@@ -16,12 +17,11 @@ public final class WhileStatement extends ContinuableStatement
     private final Expression condition;
     private final Statement statement;
 
-    public WhileStatement(Expression condition,
-                          Statement statement,
-                          int lineNumber,
-                          int columnNumber)
+    public WhileStatement(SourcePosition position,
+                          Expression condition,
+                          Statement statement)
     {
-        super(lineNumber, columnNumber);
+        super(position);
         (this.condition = condition).setEnclosingScope(this);
         (this.statement = statement).setEnclosingScope(this);
     }

@@ -2,6 +2,7 @@ package net.peelo.kahvi.compiler.ast.declaration;
 
 import net.peelo.kahvi.compiler.ast.Node;
 import net.peelo.kahvi.compiler.util.Name;
+import net.peelo.kahvi.compiler.util.SourcePosition;
 
 public final class ImportDeclaration extends Node
 {
@@ -9,13 +10,12 @@ public final class ImportDeclaration extends Node
     private final Name qualifiedIdentifier;
     private final boolean onDemand;
 
-    public ImportDeclaration(boolean _static,
+    public ImportDeclaration(SourcePosition position,
+                             boolean _static,
                              Name qualifiedIdentifier,
-                             boolean onDemand,
-                             int lineNumber,
-                             int columnNumber)
+                             boolean onDemand)
     {
-        super(lineNumber, columnNumber);
+        super(position);
         this._static = _static;
         this.qualifiedIdentifier = qualifiedIdentifier;
         this.onDemand = onDemand;

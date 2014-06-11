@@ -3,6 +3,7 @@ package net.peelo.kahvi.compiler.ast.declaration;
 import net.peelo.kahvi.compiler.ast.Modifiers;
 import net.peelo.kahvi.compiler.ast.Node;
 import net.peelo.kahvi.compiler.ast.Scope;
+import net.peelo.kahvi.compiler.util.SourcePosition;
 
 public abstract class AbstractTypeBodyDeclaration extends Node
     implements TypeBodyDeclaration
@@ -10,11 +11,10 @@ public abstract class AbstractTypeBodyDeclaration extends Node
     private final Modifiers modifiers;
     private TypeDeclaration declaringType;
 
-    public AbstractTypeBodyDeclaration(Modifiers modifiers,
-                                       int lineNumber,
-                                       int columnNumber)
+    public AbstractTypeBodyDeclaration(SourcePosition position,
+                                       Modifiers modifiers)
     {
-        super(lineNumber, columnNumber);
+        super(position);
         (this.modifiers = modifiers).setEnclosingScope(this);
     }
 

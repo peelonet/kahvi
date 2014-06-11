@@ -1,5 +1,7 @@
 package net.peelo.kahvi.compiler.ast.statement;
 
+import net.peelo.kahvi.compiler.util.SourcePosition;
+
 import java.util.List;
 
 /**
@@ -16,11 +18,9 @@ public final class BlockStatement extends Statement
 {
     private final List<Statement> statements;
 
-    public BlockStatement(List<Statement> statements,
-                          int lineNumber,
-                          int columnNumber)
+    public BlockStatement(SourcePosition position, List<Statement> statements)
     {
-        super(lineNumber, columnNumber);
+        super(position);
         for (Statement s : (this.statements = statements))
         {
             s.setEnclosingScope(this);

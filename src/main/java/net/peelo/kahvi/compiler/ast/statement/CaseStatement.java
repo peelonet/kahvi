@@ -1,6 +1,7 @@
 package net.peelo.kahvi.compiler.ast.statement;
 
 import net.peelo.kahvi.compiler.ast.expression.Expression;
+import net.peelo.kahvi.compiler.util.SourcePosition;
 
 import java.util.List;
 
@@ -23,19 +24,16 @@ public final class CaseStatement extends Statement
     private final Expression expression;
     private final List<Statement> statements;
 
-    public CaseStatement(List<Statement> statements,
-                         int lineNumber,
-                         int columnNumber)
+    public CaseStatement(SourcePosition position, List<Statement> statements)
     {
-        this(null, statements, lineNumber, columnNumber);
+        this(position, null, statements);
     }
 
-    public CaseStatement(Expression expression,
-                         List<Statement> statements,
-                         int lineNumber,
-                         int columnNumber)
+    public CaseStatement(SourcePosition position,
+                         Expression expression,
+                         List<Statement> statements)
     {
-        super(lineNumber, columnNumber);
+        super(position);
         if ((this.expression = expression) != null)
         {
             this.expression.setEnclosingScope(this);

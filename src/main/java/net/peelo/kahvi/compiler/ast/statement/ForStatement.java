@@ -1,6 +1,7 @@
 package net.peelo.kahvi.compiler.ast.statement;
 
 import net.peelo.kahvi.compiler.ast.expression.Expression;
+import net.peelo.kahvi.compiler.util.SourcePosition;
 
 import java.util.List;
 
@@ -20,14 +21,13 @@ public final class ForStatement extends ContinuableStatement
     private final List<ExpressionStatement> update;
     private final Statement statement;
 
-    public ForStatement(List<Statement> initializer,
+    public ForStatement(SourcePosition position,
+                        List<Statement> initializer,
                         Expression condition,
                         List<ExpressionStatement> update,
-                        Statement statement,
-                        int lineNumber,
-                        int columnNumber)
+                        Statement statement)
     {
-        super(lineNumber, columnNumber);
+        super(position);
         for (Statement s : (this.initializer = initializer))
         {
             s.setEnclosingScope(this);

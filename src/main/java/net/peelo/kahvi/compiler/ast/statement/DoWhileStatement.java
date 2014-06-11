@@ -1,6 +1,7 @@
 package net.peelo.kahvi.compiler.ast.statement;
 
 import net.peelo.kahvi.compiler.ast.expression.Expression;
+import net.peelo.kahvi.compiler.util.SourcePosition;
 
 /**
  * Representation of a 'do' statement.
@@ -17,12 +18,11 @@ public final class DoWhileStatement extends ContinuableStatement
     private final Statement statement;
     private final Expression condition;
 
-    public DoWhileStatement(Statement statement,
-                            Expression condition,
-                            int lineNumber,
-                            int columnNumber)
+    public DoWhileStatement(SourcePosition position,
+                            Statement statement,
+                            Expression condition)
     {
-        super(lineNumber, columnNumber);
+        super(position);
         (this.statement = statement).setEnclosingScope(this);
         (this.condition = condition).setEnclosingScope(this);
     }

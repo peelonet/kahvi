@@ -1,6 +1,7 @@
 package net.peelo.kahvi.compiler.ast.statement;
 
 import net.peelo.kahvi.compiler.ast.expression.Expression;
+import net.peelo.kahvi.compiler.util.SourcePosition;
 
 /**
  * Representation of a 'return' statement.
@@ -16,16 +17,14 @@ public final class ReturnStatement extends Statement
 {
     private final Expression expression;
 
-    public ReturnStatement(int lineNumber, int columnNumber)
+    public ReturnStatement(SourcePosition position)
     {
-        this(null, lineNumber, columnNumber);
+        this(position, null);
     }
 
-    public ReturnStatement(Expression expression,
-                           int lineNumber,
-                           int columnNumber)
+    public ReturnStatement(SourcePosition position, Expression expression)
     {
-        super(lineNumber, columnNumber);
+        super(position);
         if ((this.expression = expression) != null)
         {
             this.expression.setEnclosingScope(this);

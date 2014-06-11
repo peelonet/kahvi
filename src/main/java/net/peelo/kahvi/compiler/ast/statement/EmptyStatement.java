@@ -1,13 +1,15 @@
 package net.peelo.kahvi.compiler.ast.statement;
 
+import net.peelo.kahvi.compiler.util.SourcePosition;
+
 /**
  * Representation of empty statement, i.e. semicolon.
  */
 public final class EmptyStatement extends Statement
 {
-    public EmptyStatement(int lineNumber, int columnNumber)
+    public EmptyStatement(SourcePosition position)
     {
-        super(lineNumber, columnNumber);
+        super(position);
     }
 
     @Override

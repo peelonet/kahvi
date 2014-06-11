@@ -2,14 +2,15 @@ package net.peelo.kahvi.compiler.ast.type;
 
 import net.peelo.kahvi.compiler.ast.AtomVisitor;
 import net.peelo.kahvi.compiler.lookup.Primitive;
+import net.peelo.kahvi.compiler.util.SourcePosition;
 
 public final class PrimitiveType extends Type
 {
     private final Primitive kind;
 
-    public PrimitiveType(Primitive kind, int lineNumber, int columnNumber)
+    public PrimitiveType(SourcePosition position, Primitive kind)
     {
-        super(lineNumber, columnNumber);
+        super(position);
         this.kind = kind;
     }
 

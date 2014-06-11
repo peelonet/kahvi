@@ -1,12 +1,13 @@
 package net.peelo.kahvi.compiler.ast.type;
 
 import net.peelo.kahvi.compiler.ast.AtomVisitor;
+import net.peelo.kahvi.compiler.util.SourcePosition;
 
 public final class VoidType extends Type
 {
-    public VoidType(int lineNumber, int columnNumber)
+    public VoidType(SourcePosition position)
     {
-        super(lineNumber, columnNumber);
+        super(position);
     }
 
     @Override

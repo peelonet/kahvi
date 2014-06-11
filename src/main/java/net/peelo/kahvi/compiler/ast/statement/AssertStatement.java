@@ -1,6 +1,7 @@
 package net.peelo.kahvi.compiler.ast.statement;
 
 import net.peelo.kahvi.compiler.ast.expression.Expression;
+import net.peelo.kahvi.compiler.util.SourcePosition;
 
 /**
  * Representation of an 'assert' statement.
@@ -17,19 +18,16 @@ public final class AssertStatement extends Statement
     private final Expression condition;
     private final Expression detail;
 
-    public AssertStatement(Expression condition,
-                           int lineNumber,
-                           int columnNumber)
+    public AssertStatement(SourcePosition position, Expression condition)
     {
-        this(condition, null, lineNumber, columnNumber);
+        this(position, condition, null);
     }
 
-    public AssertStatement(Expression condition,
-                           Expression detail,
-                           int lineNumber,
-                           int columnNumber)
+    public AssertStatement(SourcePosition position,
+                           Expression condition,
+                           Expression detail)
     {
-        super(lineNumber, columnNumber);
+        super(position);
         (this.condition = condition).setEnclosingScope(this);
         if ((this.detail = detail) != null)
         {

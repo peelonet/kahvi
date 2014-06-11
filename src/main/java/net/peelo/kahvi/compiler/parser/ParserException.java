@@ -1,46 +1,33 @@
 package net.peelo.kahvi.compiler.parser;
 
-import net.peelo.kahvi.compiler.ast.SourcePosition;
+import net.peelo.kahvi.compiler.util.SourceLocatable;
+import net.peelo.kahvi.compiler.util.SourcePosition;
 
 public final class ParserException extends RuntimeException
-    implements SourcePosition
+    implements SourceLocatable
 {
-    private final int lineNumber;
-    private final int columnNumber;
+    private final SourcePosition position;
 
-    ParserException(String message, int lineNumber, int columnNumber)
+    ParserException(SourcePosition position, String message)
     {
         super(message);
-        this.lineNumber = lineNumber;
-        this.columnNumber = columnNumber;
+        this.position = position;
+    }
+
+    @Override
+    public SourcePosition getSourcePosition()
+    {
+        return this.position;
     }
 
     @Override
     public String getMessage()
     {
-        StringBuilder sb = new StringBuilder();
-
-        if (this.lineNumber > 0)
+        if (this.position == null)
         {
-            sb.append("Line: ").append(this.lineNumber).append(": ");
+            return super.getMessage();
+        } else {
+            return this.position + ": " + super.getMessage();
         }
-        if (this.columnNumber > 0)
-        {
-            sb.append("Column: ").append(this.columnNumber).append(": ");
-        }
-        
-        return sb.append(super.getMessage()).toString();
-    }
-
-    @Override
-    public int getLineNumber()
-    {
-        return this.lineNumber;
-    }
-
-    @Override
-    public int getColumnNumber()
-    {
-        return this.columnNumber;
     }
 }

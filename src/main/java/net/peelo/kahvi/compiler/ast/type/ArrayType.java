@@ -1,6 +1,7 @@
 package net.peelo.kahvi.compiler.ast.type;
 
 import net.peelo.kahvi.compiler.ast.AtomVisitor;
+import net.peelo.kahvi.compiler.util.SourcePosition;
 
 /**
  * Representation of an array type.
@@ -14,11 +15,9 @@ public final class ArrayType extends ReferenceType
 {
     private final Type componentType;
 
-    public ArrayType(Type componentType,
-                     int lineNumber,
-                     int columnNumber)
+    public ArrayType(SourcePosition position, Type componentType)
     {
-        super(lineNumber, columnNumber);
+        super(position);
         (this.componentType = componentType).setEnclosingScope(this);
     }
 

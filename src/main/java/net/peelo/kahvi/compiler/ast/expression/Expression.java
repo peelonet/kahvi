@@ -2,12 +2,13 @@ package net.peelo.kahvi.compiler.ast.expression;
 
 import net.peelo.kahvi.compiler.ast.Atom;
 import net.peelo.kahvi.compiler.ast.annotation.ElementValue;
+import net.peelo.kahvi.compiler.util.SourcePosition;
 
 public abstract class Expression extends Atom implements ElementValue
 {
-    public Expression(int lineNumber, int columnNumber)
+    public Expression(SourcePosition position)
     {
-        super(lineNumber, columnNumber);
+        super(position);
     }
 
     public abstract <R, P> R accept(ExpressionVisitor<R, P> visitor, P p);

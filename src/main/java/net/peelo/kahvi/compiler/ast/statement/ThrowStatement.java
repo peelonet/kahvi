@@ -1,6 +1,7 @@
 package net.peelo.kahvi.compiler.ast.statement;
 
 import net.peelo.kahvi.compiler.ast.expression.Expression;
+import net.peelo.kahvi.compiler.util.SourcePosition;
 
 /**
  * Representation of a 'throw' statement.
@@ -14,11 +15,9 @@ public final class ThrowStatement extends Statement
 {
     private final Expression expression;
 
-    public ThrowStatement(Expression expression,
-                          int lineNumber,
-                          int columnNumber)
+    public ThrowStatement(SourcePosition position, Expression expression)
     {
-        super(lineNumber, columnNumber);
+        super(position);
         (this.expression = expression).setEnclosingScope(this);
     }
 

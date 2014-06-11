@@ -2,6 +2,7 @@ package net.peelo.kahvi.compiler.ast;
 
 import net.peelo.kahvi.compiler.ast.declaration.ExecutableDeclaration;
 import net.peelo.kahvi.compiler.ast.declaration.TypeDeclaration;
+import net.peelo.kahvi.compiler.util.SourcePosition;
 
 /**
  * Common super class for expressions and types.
@@ -10,9 +11,9 @@ public abstract class Atom extends Node implements Scope
 {
     private Scope enclosingScope;
 
-    public Atom(int lineNumber, int columnNumber)
+    public Atom(SourcePosition position)
     {
-        super(lineNumber, columnNumber);
+        super(position);
     }
 
     public abstract <R, P> R accept(AtomVisitor<R, P> visitor, P p);

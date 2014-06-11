@@ -1,9 +1,14 @@
 package net.peelo.kahvi.compiler.parser;
 
-import net.peelo.kahvi.compiler.ast.SourcePosition;
+import net.peelo.kahvi.compiler.util.SourceLocatable;
+import net.peelo.kahvi.compiler.util.SourcePosition;
 
-public final class Token implements SourcePosition
+import java.io.Serializable;
+
+public final class Token implements SourceLocatable, Serializable
 {
+    private static final long serialVersionUID = 1L;
+
     public enum Kind
     {
         EOF("end of input"),
@@ -136,6 +141,7 @@ public final class Token implements SourcePosition
     private final String text;
     private final int lineNumber;
     private final int columnNumber;
+    private transient SourcePosition position;
 
     public Token(Kind kind,
                  String text,
@@ -164,15 +170,17 @@ public final class Token implements SourcePosition
     }
 
     @Override
-    public int getLineNumber()
+    public synchronized SourcePosition getSourcePosition()
     {
-        return this.lineNumber;
-    }
+        if (this.position == null)
+        {
+            this.position = new SourcePosition(
+                    this.lineNumber,
+                    this.columnNumber
+            );
+        }
 
-    @Override
-    public int getColumnNumber()
-    {
-        return this.columnNumber;
+        return this.position;
     }
 
     @Override

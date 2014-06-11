@@ -3,6 +3,7 @@ package net.peelo.kahvi.compiler.ast.declaration;
 import net.peelo.kahvi.compiler.ast.Modifiers;
 import net.peelo.kahvi.compiler.ast.Node;
 import net.peelo.kahvi.compiler.ast.Scope;
+import net.peelo.kahvi.compiler.util.SourcePosition;
 
 import java.util.List;
 
@@ -14,13 +15,12 @@ public abstract class TypeDeclaration extends Node
     private final List<TypeBodyDeclaration> declarations;
     private Scope enclosingScope;
 
-    public TypeDeclaration(Modifiers modifiers,
+    public TypeDeclaration(SourcePosition position,
+                           Modifiers modifiers,
                            String name,
-                           List<TypeBodyDeclaration> declarations,
-                           int lineNumber,
-                           int columnNumber)
+                           List<TypeBodyDeclaration> declarations)
     {
-        super(lineNumber, columnNumber);
+        super(position);
         (this.modifiers = modifiers).setEnclosingScope(this);
         this.name = name;
         for (TypeBodyDeclaration tbd : (this.declarations = declarations))

@@ -1,19 +1,20 @@
 package net.peelo.kahvi.compiler.parser;
 
 import net.peelo.kahvi.compiler.ast.CompilationUnit;
-import net.peelo.kahvi.compiler.ast.SourcePosition;
 import net.peelo.kahvi.compiler.ast.annotation.*;
 import net.peelo.kahvi.compiler.ast.declaration.*;
 import net.peelo.kahvi.compiler.ast.expression.*;
 import net.peelo.kahvi.compiler.ast.statement.*;
 import net.peelo.kahvi.compiler.util.Name;
+import net.peelo.kahvi.compiler.util.SourceLocatable;
+import net.peelo.kahvi.compiler.util.SourcePosition;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public final class Parser implements SourcePosition
+public final class Parser implements SourceLocatable
 {
     private final Scanner scanner;
 
@@ -28,15 +29,9 @@ public final class Parser implements SourcePosition
     }
 
     @Override
-    public int getLineNumber()
+    public SourcePosition getSourcePosition()
     {
-        return this.scanner.getLineNumber();
-    }
-
-    @Override
-    public int getColumnNumber()
-    {
-        return this.scanner.getColumnNumber();
+        return this.scanner.getSourcePosition();
     }
 
     /**
@@ -95,10 +90,6 @@ public final class Parser implements SourcePosition
             message = String.format(message, (Object[]) args);
         }
 
-        return new ParserException(
-                message,
-                this.scanner.getLineNumber(),
-                this.scanner.getColumnNumber()
-        );
+        return new ParserException(this.scanner.getSourcePosition(), message);
     }
 }

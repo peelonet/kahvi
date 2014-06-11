@@ -1,25 +1,24 @@
 package net.peelo.kahvi.compiler.ast;
 
-public abstract class Node implements SourcePosition
+import net.peelo.kahvi.compiler.util.SourceLocatable;
+import net.peelo.kahvi.compiler.util.SourcePosition;
+
+/**
+ * Common super class for all <abbr title="Abstract Syntax Tree">AST</abbr>
+ * nodes.
+ */
+public abstract class Node implements SourceLocatable
 {
-    private final int lineNumber;
-    private final int columnNumber;
+    private final SourcePosition sourcePosition;
 
-    public Node(int lineNumber, int columnNumber)
+    public Node(SourcePosition sourcePosition)
     {
-        this.lineNumber = lineNumber;
-        this.columnNumber = columnNumber;
+        this.sourcePosition = sourcePosition;
     }
 
     @Override
-    public final int getLineNumber()
+    public final SourcePosition getSourcePosition()
     {
-        return this.lineNumber;
-    }
-
-    @Override
-    public final int getColumnNumber()
-    {
-        return this.columnNumber;
+        return this.sourcePosition;
     }
 }

@@ -4,14 +4,15 @@ import net.peelo.kahvi.compiler.ast.Node;
 import net.peelo.kahvi.compiler.ast.Scope;
 import net.peelo.kahvi.compiler.ast.declaration.ExecutableDeclaration;
 import net.peelo.kahvi.compiler.ast.declaration.TypeDeclaration;
+import net.peelo.kahvi.compiler.util.SourcePosition;
 
 public abstract class Statement extends Node implements Scope
 {
     private Scope enclosingScope;
 
-    public Statement(int lineNumber, int columnNumber)
+    public Statement(SourcePosition position)
     {
-        super(lineNumber, columnNumber);
+        super(position);
     }
 
     public abstract <R, P> R accept(StatementVisitor<R, P> visitor, P p);

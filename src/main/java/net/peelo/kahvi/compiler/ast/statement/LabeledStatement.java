@@ -1,6 +1,7 @@
 package net.peelo.kahvi.compiler.ast.statement;
 
 import net.peelo.kahvi.compiler.util.Name;
+import net.peelo.kahvi.compiler.util.SourcePosition;
 
 /**
  * Representation of a labeled statement.
@@ -15,12 +16,11 @@ public final class LabeledStatement extends BreakableStatement
     private final Name label;
     private final Statement statement;
 
-    public LabeledStatement(Name label,
-                            Statement statement,
-                            int lineNumber,
-                            int columnNumber)
+    public LabeledStatement(SourcePosition position,
+                            Name label,
+                            Statement statement)
     {
-        super(columnNumber, lineNumber);
+        super(position);
         this.label = label;
         (this.statement = statement).setEnclosingScope(this);
     }

@@ -1,6 +1,7 @@
 package net.peelo.kahvi.compiler.ast.statement;
 
 import net.peelo.kahvi.compiler.util.Name;
+import net.peelo.kahvi.compiler.util.SourcePosition;
 
 /**
  * Representation of a 'continue' statement.
@@ -16,14 +17,14 @@ public final class ContinueStatement extends Statement
 {
     private final Name label;
 
-    public ContinueStatement(int lineNumber, int columnNumber)
+    public ContinueStatement(SourcePosition position)
     {
-        this(null, lineNumber, columnNumber);
+        this(position, null);
     }
 
-    public ContinueStatement(Name label, int lineNumber, int columnNumber)
+    public ContinueStatement(SourcePosition position, Name label)
     {
-        super(lineNumber, columnNumber);
+        super(position);
         this.label = label;
     }
 
