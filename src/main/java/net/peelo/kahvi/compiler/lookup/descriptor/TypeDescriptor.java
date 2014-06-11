@@ -1,10 +1,14 @@
 package net.peelo.kahvi.compiler.lookup.descriptor;
 
-public abstract class TypeDescriptor
+public abstract class TypeDescriptor implements Descriptor
 {
-    private ArrayTypeDescriptor arrayType;
+    public static final TypeDescriptor parse(String source)
+        throws DescriptorSyntaxException
+    {
+        return new DescriptorParser(source.toCharArray()).parseTypeDescriptor();
+    }
 
-    public abstract String getDescriptor();
+    private ArrayTypeDescriptor arrayType;
 
     public synchronized final ArrayTypeDescriptor getArrayType()
     {

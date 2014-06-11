@@ -2,7 +2,7 @@ package net.peelo.kahvi.compiler.lookup.descriptor;
 
 import java.util.List;
 
-public final class MethodDescriptor
+public final class MethodDescriptor implements Descriptor
 {
     /** Field descriptors of method parameters. */
     private final List<TypeDescriptor> parameterTypes;
@@ -14,6 +14,12 @@ public final class MethodDescriptor
     {
         this.parameterTypes = parameterTypes;
         this.returnType = returnType;
+    }
+
+    public static MethodDescriptor parse(String source)
+        throws DescriptorSyntaxException
+    {
+        return new DescriptorParser(source.toCharArray()).parseMethodDescriptor();
     }
 
     /**
@@ -32,6 +38,7 @@ public final class MethodDescriptor
         return this.returnType;
     }
 
+    @Override
     public String getDescriptor()
     {
         StringBuilder sb = new StringBuilder();

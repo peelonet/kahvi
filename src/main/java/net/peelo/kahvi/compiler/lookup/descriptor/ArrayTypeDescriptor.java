@@ -17,7 +17,7 @@ public final class ArrayTypeDescriptor extends ReferenceTypeDescriptor
     @Override
     public String getDescriptor()
     {
-        return this.componentType.getDescriptor().concat("]");
+        return "[".concat(this.componentType.getDescriptor());
     }
 
     @Override
