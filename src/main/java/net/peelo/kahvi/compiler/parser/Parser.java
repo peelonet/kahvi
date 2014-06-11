@@ -189,12 +189,44 @@ public final class Parser implements SourceLocatable
         }
     }
 
+    /**
+     * <pre>
+     *   Annotation:
+     *     NormalAnnotation
+     *     MarkerAnnotation
+     *     SingleElementAnnotation
+     *
+     *   NormalAnnotation:
+     *     @ TypeName ( [ElementValuePairList] )
+     *
+     *   MarkerAnnotation:
+     *     @ TypeName
+     *
+     *   SingleElementAnnotation:
+     *     @ TypeName ( ElementValue )
+     * </pre>
+     */
     private Annotation parseAnnotation()
         throws ParserException, IOException
     {
-        this.scanner.expect(Token.Kind.AT);
+        SourcePosition position = this.scanner.getSourcePosition();
+        Name className;
 
-        throw this.error("TODO: parse annotation");
+        this.scanner.expect(Token.Kind.AT);
+        className = this.parseQualifiedIdentifier();
+        if (this.scanner.peek().is(Token.Kind.LPAREN))
+        {
+            this.scanner.read();
+            if (this.scanner.peek().is(Token.Kind.IDENTIFIER)
+                && this.scanner.peekNextButOne().is(Token.Kind.ASSIGN))
+            {
+                throw this.error("TODO: parse normal annotation");
+            } else {
+                throw this.error("TODO: parse element annotation");
+            }
+        }
+
+        throw this.error("TODO: parse marker annotation");
     }
 
     /**
@@ -263,7 +295,22 @@ public final class Parser implements SourceLocatable
     private Name parseQualifiedIdentifier()
         throws ParserException, IOException
     {
-        throw this.error("TODO: parse qualified identifier");
+        Token token = this.scanner.read();
+        Name result;
+
+        if (!token.is(Token.Kind.IDENTIFIER))
+        {
+            throw this.error("unexpected %s; missing identifier", token);
+        }
+        result = new Name(null, token.getText());
+        while (this.scanner.peek().is(Token.Kind.DOT)
+                && this.scanner.peekNextButOne().is(Token.Kind.IDENTIFIER))
+        {
+            this.scanner.read();
+            result = new Name(result, this.scanner.read().getText());
+        }
+        
+        return result;
     }
 
     private Atom parseExpression()
@@ -348,10 +395,181 @@ public final class Parser implements SourceLocatable
         return atom;
     }
 
+    /**
+     * <pre>
+     *   ConditionalOrExpression:
+     *     ConditionalAndExpression
+     *     ConditionalOrExpression || ConditionalAndExpression
+     * </pre>
+     */
     private Atom parseConditionalOrExpression()
         throws ParserException, IOException
     {
-        throw this.error("TODO: parse conditional or expression");
+        Atom atom = this.parseConditionalAndExpression();
+
+        while (this.scanner.peek().is(Token.Kind.OR))
+        {
+            this.scanner.read();
+            atom = new BinaryExpression(
+                    atom.getSourcePosition(),
+                    this.toExpression(atom),
+                    BinaryExpression.Kind.OR,
+                    this.toExpression(this.parseConditionalAndExpression())
+            );
+        }
+
+        return atom;
+    }
+
+    /**
+     * <pre>
+     *   ConditionalAndExpression:
+     *     InclusiveOrExpression
+     *     ConditionalAndExpression && InclusiveOrExpression
+     * </pre>
+     */
+    private Atom parseConditionalAndExpression()
+        throws ParserException, IOException
+    {
+        Atom atom = this.parseInclusiveOrExpression();
+
+        while (this.scanner.peek().is(Token.Kind.AND))
+        {
+            this.scanner.read();
+            atom = new BinaryExpression(
+                    atom.getSourcePosition(),
+                    this.toExpression(atom),
+                    BinaryExpression.Kind.AND,
+                    this.toExpression(this.parseInclusiveOrExpression())
+            );
+        }
+
+        return atom;
+    }
+
+    /**
+     * <pre>
+     *   InclusiveOrExpression:
+     *     ExclusiveOrExpression
+     *     InclusiveOrExpression | ExclusiveOrExpression
+     * </pre>
+     */
+    private Atom parseInclusiveOrExpression()
+        throws ParserException, IOException
+    {
+        Atom atom = this.parseExclusiveOrExpression();
+
+        while (this.scanner.peek().is(Token.Kind.BIT_OR))
+        {
+            this.scanner.read();
+            atom = new BinaryExpression(
+                    atom.getSourcePosition(),
+                    this.toExpression(atom),
+                    BinaryExpression.Kind.BIT_OR,
+                    this.toExpression(this.parseExclusiveOrExpression())
+            );
+        }
+
+        return atom;
+    }
+
+    /**
+     * <pre>
+     *   ExclusiveOrExpression:
+     *     AndExpression
+     *     ExclusiveOrExpression ^ AndExpression
+     * </pre>
+     */
+    private Atom parseExclusiveOrExpression()
+        throws ParserException, IOException
+    {
+        Atom atom = this.parseAndExpression();
+
+        while (this.scanner.peek().is(Token.Kind.BIT_XOR))
+        {
+            this.scanner.read();
+            atom = new BinaryExpression(
+                    atom.getSourcePosition(),
+                    this.toExpression(atom),
+                    BinaryExpression.Kind.BIT_XOR,
+                    this.toExpression(this.parseAndExpression())
+            );
+        }
+
+        return atom;
+    }
+
+    /**
+     * <pre>
+     *   AndExpression:
+     *     EqualityExpression
+     *     AndExpression & EqualityExpression
+     * </pre>
+     */
+    private Atom parseAndExpression()
+        throws ParserException, IOException
+    {
+        Atom atom = this.parseEqualityExpression();
+
+        while (this.scanner.peek().is(Token.Kind.BIT_AND))
+        {
+            this.scanner.read();
+            atom = new BinaryExpression(
+                    atom.getSourcePosition(),
+                    this.toExpression(atom),
+                    BinaryExpression.Kind.BIT_AND,
+                    this.toExpression(this.parseEqualityExpression())
+            );
+        }
+
+        return atom;
+    }
+
+    /**
+     * <pre>
+     *   EqualityExpression:
+     *     RelationalExpression
+     *     EqualityExpression == RelationalExpression
+     *     EqualityExpression != RelationalExpression
+     * </pre>
+     */
+    private Atom parseEqualityExpression()
+        throws ParserException, IOException
+    {
+        Atom atom = this.parseRelationalExpression();
+
+        while (this.scanner.peek().is(Token.Kind.EQ, Token.Kind.NE))
+        {
+            Token.Kind kind = this.scanner.read().getKind();
+
+            atom = new BinaryExpression(
+                    atom.getSourcePosition(),
+                    this.toExpression(atom),
+                    kind == Token.Kind.EQ
+                        ? BinaryExpression.Kind.EQ
+                        : BinaryExpression.Kind.NE,
+                    this.toExpression(this.parseRelationalExpression())
+            );
+        }
+
+        return atom;
+    }
+
+    /**
+     * <pre>
+     *   RelationalExpression:
+     *     ShiftExpression
+     *     RelationalExpression &lt; ShiftExpression
+     *     RelationalExpression &gt; ShiftExpression
+     *     RelationalExpression &lt;= ShiftExpression
+     *     RelationalExpression &gt;= ShiftExpression
+     *     RelationalExpression instanceof ReferenceType
+     * </pre>
+     */
+    private Atom parseRelationalExpression()
+        throws ParserException, IOException
+    {
+        throw this.error("TODO: parse relational expression");
     }
 
     private Expression toExpression(Atom atom)
