@@ -146,6 +146,10 @@ public final class Scanner implements SourceLocatable
                 this.advance();
                 return this.token(Token.Kind.AT);
 
+            case '?':
+                this.advance();
+                return this.token(Token.Kind.CONDITIONAL);
+
             case '.':
                 this.advance();
                 if (this.nextChar == '.')
@@ -160,17 +164,6 @@ public final class Scanner implements SourceLocatable
                     return this.token(Token.Kind.DOT_DOT_DOT);
                 } else {
                     return this.token(Token.Kind.DOT);
-                }
-
-            case '?':
-                this.advance();
-                if (this.nextChar == ':')
-                {
-                    this.advance();
-                    
-                    return this.token(Token.Kind.ELVIS);
-                } else {
-                    return this.token(Token.Kind.CONDITIONAL);
                 }
 
             case '+':

@@ -29,7 +29,6 @@ public final class Token implements SourceLocatable, Serializable
         CONDITIONAL("`?'"),
         AT("`@'"),
         ARROW("`=>'"),
-        ELVIS("`?:'"),
 
         // Operators
         ADD("`+'"),
