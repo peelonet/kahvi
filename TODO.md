@@ -12,7 +12,6 @@ Expressions
 -----------
 - ArrayAccess
 - Identifier
-- InstanceOf
 - Literal
 - MemberSelect
 - NewArray
@@ -24,4 +23,3 @@ Expressions
 Types
 -----
 - Parameterized
-- Wildcard
