@@ -11,10 +11,7 @@ Statements
 Expressions
 -----------
 - ArrayAccess
-- Assignment
 - Binary
-- CompoundAssignment
-- Conditional
 - Identifier
 - InstanceOf
 - Literal
