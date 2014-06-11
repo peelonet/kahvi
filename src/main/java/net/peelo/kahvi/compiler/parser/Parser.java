@@ -1,6 +1,10 @@
 package net.peelo.kahvi.compiler.parser;
 
+import net.peelo.kahvi.compiler.ast.CompilationUnit;
 import net.peelo.kahvi.compiler.ast.SourcePosition;
+import net.peelo.kahvi.compiler.ast.declaration.*;
+import net.peelo.kahvi.compiler.ast.expression.*;
+import net.peelo.kahvi.compiler.ast.statement.*;
 
 public final class Parser implements SourcePosition
 {
@@ -26,5 +30,17 @@ public final class Parser implements SourcePosition
     public int getColumnNumber()
     {
         return this.scanner.getColumnNumber();
+    }
+
+    /**
+     * <pre>
+     *   CompilationUnit:
+     *     [PackageDeclaration] {ImportDeclaration} {TypeDeclaration}
+     * </pre>
+     */
+    public CompilationUnit parseCompilationUnit()
+        throws ParserException, IOException
+    {
+        return null; // TODO
     }
 }

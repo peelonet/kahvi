@@ -213,21 +213,161 @@ public final class Scanner implements SourcePosition
                 }
 
             // TODO: /
-            // TODO: %
-            // TODO: &
-            // TODO: |
-            // TODO: ^
-            // TODO: <
-            // TODO: >
-            // TODO: =
-            // TODO: !
+
+            case '%':
+                this.advance();
+                if (this.nextChar == '=')
+                {
+                    this.advance();
+
+                    return this.token(Token.Kind.ASSIGN_MOD);
+                } else {
+                    return this.token(Token.Kind.MOD);
+                }
+
+            case '&':
+                this.advance();
+                if (this.nextChar == '&')
+                {
+                    this.advance();
+
+                    return this.token(Token.Kind.AND);
+                }
+                else if (this.nextChar == '=')
+                {
+                    this.advance();
+
+                    return this.token(Token.Kind.ASSIGN_BIT_AND);
+                } else {
+                    return this.token(Token.Kind.BIT_AND);
+                }
+            
+            case '|':
+                this.advance();
+                if (this.nextChar == '|')
+                {
+                    this.advance();
+
+                    return this.token(Token.Kind.OR);
+                }
+                else if (this.nextChar == '=')
+                {
+                    this.advance();
+
+                    return this.token(Token.Kind.ASSIGN_BIT_OR);
+                } else {
+                    return this.token(Token.Kind.BIT_OR);
+                }
+
+            case '^':
+                this.advance();
+                if (this.nextChar == '=')
+                {
+                    this.advance();
+
+                    return this.token(Token.Kind.ASSIGN_BIT_XOR);
+                } else {
+                    return this.token(Token.Kind.BIT_XOR);
+                }
+
+            case '<':
+                this.advance();
+                if (this.nextChar == '<')
+                {
+                    this.advance();
+                    if (this.nextChar == '=')
+                    {
+                        this.advance();
+
+                        return this.token(Token.Kind.ASSIGN_LSH);
+                    } else {
+                        return this.token(Token.Kind.LSH);
+                    }
+                }
+                else if (this.nextChar == '=')
+                {
+                    this.advance();
+
+                    return this.token(Token.Kind.LTE);
+                } else {
+                    return this.token(Token.Kind.LT);
+                }
+
+            case '>':
+                this.advance();
+                if (this.nextChar == '>')
+                {
+                    this.advance();
+                    if (this.nextChar == '>')
+                    {
+                        this.advance();
+                        if (this.nextChar == '=')
+                        {
+                            this.advance();
+
+                            return this.token(Token.Kind.ASSIGN_RSH2);
+                        } else {
+                            return this.token(Token.Kind.RSH2);
+                        }
+                    }
+                    else if (this.nextChar == '=')
+                    {
+                        this.advance();
+
+                        return this.token(Token.Kind.ASSIGN_RSH);
+                    } else {
+                        return this.token(Token.Kind.RSH);
+                    }
+                }
+                else if (this.nextChar == '=')
+                {
+                    this.advance();
+
+                    return this.token(Token.Kind.GTE);
+                } else {
+                    return this.token(Token.Kind.GT);
+                }
+
+            case '=':
+                this.advance();
+                if (this.nextChar == '=')
+                {
+                    this.advance();
+
+                    return this.token(Token.Kind.EQ);
+                } else {
+                    return this.token(Token.Kind.ASSIGN);
+                }
+
+            case '!':
+                this.advance();
+                if (this.nextChar == '=')
+                {
+                    this.advance();
+
+                    return this.token(Token.Kind.NE);
+                } else {
+                    return this.token(Token.Kind.NOT);
+                }
+
             // TODO: '
             // TODO: "
             // TODO: 0-9
         }
         if (Character.isJavaIdentifierStart(this.nextChar))
         {
-            // TODO: scan identifier
+            StringBuilder buffer = new StringBuilder();
+
+            do
+            {
+                buffer.append((char) this.nextChar);
+                this.advance();
+            }
+            while (this.nextChar >= 0
+                    && Character.isJavaIdentifierPart(this.nextChar));
+            // TODO: process keywords
+
+            return this.token(Token.Kind.IDENTIFIER, buffer.toString());
         }
 
         throw this.error("invalid character input `%c' (U+%04X)",
@@ -269,6 +409,11 @@ public final class Scanner implements SourcePosition
     private Token token(Token.Kind kind)
     {
         return new Token(kind, null, this.lineNumber, this.columnNumber);
+    }
+
+    private Token token(Token.Kind kind, String text)
+    {
+        return new Token(kind, text, this.lineNumber, this.columnNumber);
     }
 
     private ParserException error(String message, Object... args)
