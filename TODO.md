@@ -11,7 +11,6 @@ Statements
 Expressions
 -----------
 - ArrayAccess
-- Binary
 - Identifier
 - InstanceOf
 - Literal
