@@ -269,7 +269,56 @@ public final class Parser implements SourceLocatable
     private Atom parseExpression()
         throws ParserException, IOException
     {
-        throw this.error("TODO: parse expression");
+        return this.parseAssignmentExpression();
+    }
+
+    private Atom parseAssignmentExpression()
+        throws ParserException, IOException
+    {
+        Atom atom = this.parseConditionalExpression();
+
+        if (this.scanner.peek().is(Token.Kind.ASSIGN))
+        {
+            this.scanner.read();
+
+            return new AssignmentExpression(
+                    atom.getSourcePosition(),
+                    this.toAssignableExpression(atom),
+                    this.toExpression(this.parseExpression())
+            );
+        }
+        else if (this.scanner.peek().is(
+                    Token.Kind.ASSIGN_ADD,
+                    Token.Kind.ASSIGN_SUB,
+                    Token.Kind.ASSIGN_MUL,
+                    Token.Kind.ASSIGN_DIV,
+                    Token.Kind.ASSIGN_MOD,
+                    Token.Kind.ASSIGN_LSH,
+                    Token.Kind.ASSIGN_RSH,
+                    Token.Kind.ASSIGN_BIT_AND,
+                    Token.Kind.ASSIGN_BIT_OR,
+                    Token.Kind.ASSIGN_BIT_XOR))
+        {
+            Token.Kind kind = this.scanner.read().getKind();
+
+            return new CompoundAssignmentExpression(
+                    atom.getSourcePosition(),
+                    this.toAssignableExpression(atom),
+                    kind == Token.Kind.ASSIGN_ADD ? CompoundAssignmentExpression.Kind.ADD :
+                    kind == Token.Kind.ASSIGN_SUB ? CompoundAssignmentExpression.Kind.SUB :
+                    kind == Token.Kind.ASSIGN_MUL ? CompoundAssignmentExpression.Kind.MUL :
+                    kind == Token.Kind.ASSIGN_DIV ? CompoundAssignmentExpression.Kind.DIV :
+                    kind == Token.Kind.ASSIGN_MOD ? CompoundAssignmentExpression.Kind.MOD :
+                    kind == Token.Kind.ASSIGN_LSH ? CompoundAssignmentExpression.Kind.LSH :
+                    kind == Token.Kind.ASSIGN_RSH ? CompoundAssignmentExpression.Kind.RSH :
+                    kind == Token.Kind.ASSIGN_BIT_AND ? CompoundAssignmentExpression.Kind.BIT_AND :
+                    kind == Token.Kind.ASSIGN_BIT_OR ? CompoundAssignmentExpression.Kind.BIT_OR :
+                    CompoundAssignmentExpression.Kind.BIT_XOR,
+                    this.toExpression(this.parseExpression())
+            );
+        }
+
+        return atom;
     }
 
     private Atom parseConditionalExpression()
@@ -314,6 +363,16 @@ public final class Parser implements SourceLocatable
         }
 
         throw this.error("unexpected %s; missing expression", atom);
+    }
+
+    private AssignableExpression toAssignableExpression(Atom atom)
+    {
+        if (atom instanceof AssignableExpression)
+        {
+            return (AssignableExpression) atom;
+        }
+
+        throw this.error("unexpected %s; missing variable", atom);
     }
 
     private ParserException error(String message, Object... args)

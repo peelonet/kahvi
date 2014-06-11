@@ -168,6 +168,23 @@ public final class Token implements SourceLocatable, Serializable
         return this.kind == kind;
     }
 
+    public boolean is(Kind first, Kind... rest)
+    {
+        if (this.kind == first)
+        {
+            return true;
+        }
+        for (Kind kind : rest)
+        {
+            if (this.kind == kind)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     @Override
     public synchronized SourcePosition getSourcePosition()
     {
