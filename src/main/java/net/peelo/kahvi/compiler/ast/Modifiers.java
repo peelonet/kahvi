@@ -22,4 +22,44 @@ public final class Modifiers
     {
         return this.modifiers;
     }
+
+    public boolean isAbstract()
+    {
+        return this.modifiers.contains(Modifier.ABSTRACT);
+    }
+
+    public boolean isFinal()
+    {
+        return this.modifiers.contains(Modifier.FINAL);
+    }
+
+    public boolean isNative()
+    {
+        return this.modifiers.contains(Modifier.NATIVE);
+    }
+
+    public boolean isStatic()
+    {
+        return this.modifiers.contains(Modifier.STATIC);
+    }
+
+    public boolean isStrictfp()
+    {
+        return this.modifiers.contains(Modifier.STRICTFP);
+    }
+
+    public boolean isSynchronized()
+    {
+        return this.modifiers.contains(Modifier.SYNCHRONIZED);
+    }
+
+    public boolean isTransient()
+    {
+        return this.modifiers.contains(Modifier.TRANSIENT);
+    }
+
+    public boolean isVolatile()
+    {
+        return this.modifiers.contains(Modifier.VOLATILE);
+    }
 }
