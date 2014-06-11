@@ -24,7 +24,5 @@ Expressions
 
 Types
 -----
-- Array
 - Parameterized
-- Primitive
 - Wildcard
