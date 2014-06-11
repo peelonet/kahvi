@@ -158,6 +158,11 @@ public final class Token implements SourcePosition
         return this.text;
     }
 
+    public boolean is(Kind kind)
+    {
+        return this.kind == kind;
+    }
+
     @Override
     public int getLineNumber()
     {

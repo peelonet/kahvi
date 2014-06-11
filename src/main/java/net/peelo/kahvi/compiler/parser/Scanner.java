@@ -83,6 +83,17 @@ public final class Scanner implements SourcePosition
         return this.nextToken;
     }
 
+    public void expect(Token.Kind kind)
+        throws ParserException, IOException
+    {
+        Token token = this.read();
+
+        if (token.getKind() != kind)
+        {
+            throw this.error("unexpected %s; missing %s", token, kind);
+        }
+    }
+
     private Token produce()
         throws IOException
     {
