@@ -2,6 +2,16 @@ package net.peelo.kahvi.compiler.ast.statement;
 
 import net.peelo.kahvi.compiler.ast.expression.Expression;
 
+/**
+ * Representation of a 'do' statement.
+ *
+ * <p> For example:
+ * <pre>
+ *   do
+ *       <em>statement</em>
+ *   while ( <em>expression</em> );
+ * </pre>
+ */
 public final class DoWhileStatement extends Statement
 {
     private final Statement statement;

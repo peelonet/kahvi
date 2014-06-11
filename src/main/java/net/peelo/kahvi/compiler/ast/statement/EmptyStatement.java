@@ -1,5 +1,8 @@
 package net.peelo.kahvi.compiler.ast.statement;
 
+/**
+ * Representation of empty statement, i.e. semicolon.
+ */
 public final class EmptyStatement extends Statement
 {
     public EmptyStatement(int lineNumber, int columnNumber)

@@ -2,6 +2,16 @@ package net.peelo.kahvi.compiler.ast.statement;
 
 import net.peelo.kahvi.compiler.ast.expression.Expression;
 
+/**
+ * Representation of an 'assert' statement.
+ *
+ * <p> For example:
+ * <pre>
+ *   assert <em>condition</em> ;
+ *
+ *   assert <em>condition</em> : <em>detail</em> ;
+ * </pre>
+ */
 public final class AssertStatement extends Statement
 {
     private final Expression condition;

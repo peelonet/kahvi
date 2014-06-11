@@ -2,6 +2,14 @@ package net.peelo.kahvi.compiler.ast.statement;
 
 import net.peelo.kahvi.compiler.ast.expression.Expression;
 
+/**
+ * Representation of an expression statement.
+ *
+ * <p> For example:
+ * <pre>
+ *   <em>expression</em> ;
+ * </pre>
+ */
 public final class ExpressionStatement extends Statement
 {
     private final Expression expression;

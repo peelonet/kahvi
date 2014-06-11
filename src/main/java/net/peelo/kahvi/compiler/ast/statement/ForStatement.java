@@ -4,6 +4,15 @@ import net.peelo.kahvi.compiler.ast.expression.Expression;
 
 import java.util.List;
 
+/**
+ * Representation of 'for' loop statement.
+ *
+ * <p> For example:
+ * <pre>
+ *   for ( <em>initializer</em> ; <em>condition</em> ; <em>update</em> )
+ *       <em>statement</em>
+ * </pre>
+ */
 public final class ForStatement extends Statement
 {
     private final List<Statement> initializer;

@@ -4,6 +4,16 @@ import net.peelo.kahvi.compiler.ast.expression.Expression;
 
 import java.util.List;
 
+/**
+ * Representation of a 'switch' statement.
+ *
+ * <p> For example:
+ * <pre>
+ *   switch ( <em>expression</em> ) {
+ *     <em>cases</em>
+ *   }
+ * </pre>
+ */
 public final class SwitchStatement extends Statement
 {
     private final Expression expression;

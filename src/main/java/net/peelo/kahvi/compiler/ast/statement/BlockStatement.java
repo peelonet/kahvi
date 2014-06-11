@@ -2,6 +2,16 @@ package net.peelo.kahvi.compiler.ast.statement;
 
 import java.util.List;
 
+/**
+ * Representation of a statement block.
+ *
+ * <p> For example:
+ * <pre>
+ *   { }
+ *
+ *   { <em>statements</em> }
+ * </pre>
+ */
 public final class BlockStatement extends Statement
 {
     private final List<Statement> statements;

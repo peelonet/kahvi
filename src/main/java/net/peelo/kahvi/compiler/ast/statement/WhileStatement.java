@@ -2,6 +2,15 @@ package net.peelo.kahvi.compiler.ast.statement;
 
 import net.peelo.kahvi.compiler.ast.expression.Expression;
 
+/**
+ * Representation of a 'while' loop statement.
+ *
+ * <p> For example:
+ * <pre>
+ *   while ( <em>condition</em> )
+ *       <em>statement</em>
+ * </pre>
+ */
 public final class WhileStatement extends Statement
 {
     private final Expression condition;

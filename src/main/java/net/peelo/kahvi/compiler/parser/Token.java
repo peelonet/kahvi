@@ -169,4 +169,10 @@ public final class Token implements SourcePosition
     {
         return this.columnNumber;
     }
+
+    @Override
+    public String toString()
+    {
+        return this.kind.toString();
+    }
 }

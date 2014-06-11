@@ -15,8 +15,11 @@ public final class Name implements Serializable, Comparable<Name>, CharSequence,
 {
     private static final long serialVersionUID = 1L;
 
+    /** Optional qualifier part of the name. */
     private final Name qualifier;
+    /** Simple name. */
     private final String simpleName;
+    /** Cached full name. */
     private transient String cachedFullName;
 
     /**
@@ -77,6 +80,9 @@ public final class Name implements Serializable, Comparable<Name>, CharSequence,
         return this.qualifier;
     }
 
+    /**
+     * Returns simple name, which is the last identifier in qualified name.
+     */
     public String getSimpleName()
     {
         return this.simpleName;
@@ -110,6 +116,12 @@ public final class Name implements Serializable, Comparable<Name>, CharSequence,
     public int compareTo(Name that)
     {
         return this.toString().compareTo(that.toString());
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return this.toString().hashCode();
     }
 
     @Override
@@ -152,6 +164,9 @@ public final class Name implements Serializable, Comparable<Name>, CharSequence,
         return new SingleItemIterator<String>(this.simpleName);
     }
 
+    /**
+     * Returns the full qualified name as a string.
+     */
     @Override
     public synchronized String toString()
     {

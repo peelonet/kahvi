@@ -2,6 +2,15 @@ package net.peelo.kahvi.compiler.ast.statement;
 
 import net.peelo.kahvi.compiler.ast.expression.Expression;
 
+/**
+ * Representation of a 'synchronized' statement.
+ *
+ * <p> For example:
+ * <pre>
+ *   synchronized ( <em>expression</em> )
+ *       <em>block</em>
+ * </pre>
+ */
 public final class SynchronizedStatement extends Statement
 {
     private final Expression expression;

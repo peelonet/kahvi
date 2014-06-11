@@ -2,6 +2,14 @@ package net.peelo.kahvi.compiler.ast.statement;
 
 import net.peelo.kahvi.compiler.ast.expression.Expression;
 
+/**
+ * Representation of a 'throw' statement.
+ *
+ * <p> For example:
+ * <pre>
+ *   throw <em>expression</em> ;
+ * </pre>
+ */
 public final class ThrowStatement extends Statement
 {
     private final Expression expression;

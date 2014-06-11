@@ -2,6 +2,20 @@ package net.peelo.kahvi.compiler.ast.statement;
 
 import net.peelo.kahvi.compiler.ast.expression.Expression;
 
+/**
+ * Representation of an 'if' statement.
+ *
+ * <p> For example:
+ * <pre>
+ *   if ( <em>condition</em> )
+ *       <em>thenStatement</em>
+ *
+ *   if ( <em>condition</em> )
+ *       <em>thenStatement</em>
+ *   else
+ *       <em>elseStatement</em>
+ * </pre>
+ */
 public final class IfStatement extends Statement
 {
     private final Expression condition;

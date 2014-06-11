@@ -4,6 +4,20 @@ import net.peelo.kahvi.compiler.ast.expression.Expression;
 
 import java.util.List;
 
+/**
+ * Representation of a 'case' in a 'switch' statement.
+ *
+ * <p> For example:
+ * <pre>
+ *   case <em>expression</em> :
+ *       <em>statements</em>
+ *
+ *   default :
+ *       <em>statements</em>
+ * </pre>
+ *
+ * @see net.peelo.kahvi.compiler.ast.statement.SwitchStatement
+ */
 public final class CaseStatement extends Statement
 {
     private final Expression expression;

@@ -2,6 +2,16 @@ package net.peelo.kahvi.compiler.ast.statement;
 
 import net.peelo.kahvi.compiler.util.Name;
 
+/**
+ * Representation of a 'continue' statement.
+ *
+ * <p> For example:
+ * <pre>
+ *   continue;
+ *
+ *   continue <em>label</em> ;
+ * </pre>
+ */
 public final class ContinueStatement extends Statement
 {
     private final Name label;

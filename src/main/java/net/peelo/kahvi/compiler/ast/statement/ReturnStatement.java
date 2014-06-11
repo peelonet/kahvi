@@ -2,6 +2,16 @@ package net.peelo.kahvi.compiler.ast.statement;
 
 import net.peelo.kahvi.compiler.ast.expression.Expression;
 
+/**
+ * Representation of a 'return' statement.
+ *
+ * <p> For example:
+ * <pre>
+ *   return;
+ *
+ *   return <em>expression</em> ;
+ * </pre>
+ */
 public final class ReturnStatement extends Statement
 {
     private final Expression expression;

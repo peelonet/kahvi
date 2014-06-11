@@ -2,6 +2,14 @@ package net.peelo.kahvi.compiler.ast.statement;
 
 import net.peelo.kahvi.compiler.util.Name;
 
+/**
+ * Representation of a labeled statement.
+ *
+ * <p> For example:
+ * <pre>
+ *   <em>label</em> : <em>statement</em>
+ * </pre>
+ */
 public final class LabeledStatement extends Statement
 {
     private final Name label;

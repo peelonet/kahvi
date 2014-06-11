@@ -2,6 +2,16 @@ package net.peelo.kahvi.compiler.ast.statement;
 
 import net.peelo.kahvi.compiler.util.Name;
 
+/**
+ * Representation of a 'break' statement.
+ *
+ * <p> For example:
+ * <pre>
+ *   break;
+ *
+ *   break <em>label</em> ;
+ * </pre>
+ */
 public final class BreakStatement extends Statement
 {
     private final Name label;
