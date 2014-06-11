@@ -2,12 +2,15 @@ package net.peelo.kahvi.compiler.parser;
 
 import net.peelo.kahvi.compiler.ast.Atom;
 import net.peelo.kahvi.compiler.ast.CompilationUnit;
+import net.peelo.kahvi.compiler.ast.Modifier;
 import net.peelo.kahvi.compiler.ast.Modifiers;
+import net.peelo.kahvi.compiler.ast.Visibility;
 import net.peelo.kahvi.compiler.ast.annotation.*;
 import net.peelo.kahvi.compiler.ast.declaration.*;
 import net.peelo.kahvi.compiler.ast.expression.*;
 import net.peelo.kahvi.compiler.ast.statement.*;
 import net.peelo.kahvi.compiler.ast.type.*;
+import net.peelo.kahvi.compiler.lookup.Primitive;
 import net.peelo.kahvi.compiler.util.Name;
 import net.peelo.kahvi.compiler.util.SourceLocatable;
 import net.peelo.kahvi.compiler.util.SourcePosition;
@@ -15,7 +18,9 @@ import net.peelo.kahvi.compiler.util.SourcePosition;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 public final class Parser implements SourceLocatable
 {
@@ -64,7 +69,7 @@ public final class Parser implements SourceLocatable
                     imports.add(this.parseImportDeclaration());
                 }
             } else {
-                throw this.error("TODO: parse annotated type declaration");
+                typeDeclarations.add(this.parseTypeDeclaration(this.parseModifiers(annotations)));
             }
         } else {
             if (this.scanner.peek().is(Token.Kind.KEYWORD_PACKAGE)
@@ -81,7 +86,7 @@ public final class Parser implements SourceLocatable
         }
         while (!this.scanner.peek().is(Token.Kind.EOF))
         {
-            throw this.error("TODO: parse type declaration");
+            typeDeclarations.add(this.parseTypeDeclaration(this.parseModifiers()));
         }
 
         return new CompilationUnit(
@@ -314,21 +319,144 @@ public final class Parser implements SourceLocatable
         return result;
     }
 
+    private Modifiers parseModifiers()
+        throws ParserException, IOException
+    {
+        return this.parseModifiers(this.parseAnnotationList());
+    }
+
+    private Modifiers parseModifiers(List<Annotation> annotations)
+        throws ParserException, IOException
+    {
+        Visibility visibility = null;
+        Set<Modifier> modifiers = EnumSet.noneOf(Modifier.class);
+
+        for (;;)
+        {
+            if (this.scanner.peekRead(Token.Kind.KEYWORD_PUBLIC))
+            {
+                if (visibility != null)
+                {
+                    throw this.error("visibility is both '%s' and 'public'", visibility);
+                }
+                visibility = Visibility.PUBLIC;
+            }
+            else if (this.scanner.peekRead(Token.Kind.KEYWORD_PROTECTED))
+            {
+                if (visibility != null)
+                {
+                    throw this.error("visibility is both '%s' and 'protected'", visibility);
+                }
+                visibility = Visibility.PROTECTED;
+            }
+            else if (this.scanner.peekRead(Token.Kind.KEYWORD_PRIVATE))
+            {
+                if (visibility != null)
+                {
+                    throw this.error("visibility is both '%s' and 'private'", visibility);
+                }
+                visibility = Visibility.PRIVATE;
+            }
+            else if (this.scanner.peekRead(Token.Kind.KEYWORD_PACKAGE))
+            {
+                if (visibility != null)
+                {
+                    throw this.error("visibility is both '%s' and 'package'", visibility);
+                }
+                visibility = Visibility.PACKAGE;
+            } else {
+                Modifier modifier;
+
+                if (this.scanner.peekRead(Token.Kind.KEYWORD_STATIC))
+                {
+                    modifier = Modifier.STATIC;
+                }
+                else if (this.scanner.peekRead(Token.Kind.KEYWORD_ABSTRACT))
+                {
+                    if (modifiers.contains(Modifier.FINAL))
+                    {
+                        throw this.error("'abstract' and 'final' are mutually exclusive");
+                    }
+                    else if (modifiers.contains(Modifier.NATIVE))
+                    {
+                        throw this.error("'abstract' and 'native' are mutually exclusive");
+                    }
+                    modifier = Modifier.ABSTRACT;
+                }
+                else if (this.scanner.peekRead(Token.Kind.KEYWORD_FINAL))
+                {
+                    if (modifiers.contains(Modifier.ABSTRACT))
+                    {
+                        throw this.error("'final' are 'abstract' are mutually exclusive");
+                    }
+                    modifier = Modifier.FINAL;
+                }
+                else if (this.scanner.peekRead(Token.Kind.KEYWORD_NATIVE))
+                {
+                    if (modifiers.contains(Modifier.ABSTRACT))
+                    {
+                        throw this.error("'native' and 'abstract' are mutually exclusive");
+                    }
+                    modifier = Modifier.NATIVE;
+                }
+                else if (this.scanner.peekRead(Token.Kind.KEYWORD_SYNCHRONIZED))
+                {
+                    modifier = Modifier.SYNCHRONIZED;
+                }
+                else if (this.scanner.peekRead(Token.Kind.KEYWORD_TRANSIENT))
+                {
+                    modifier = Modifier.TRANSIENT;
+                }
+                else if (this.scanner.peekRead(Token.Kind.KEYWORD_VOLATILE))
+                {
+                    modifier = Modifier.VOLATILE;
+                }
+                else if (this.scanner.peekRead(Token.Kind.KEYWORD_STRICTFP))
+                {
+                    modifier = Modifier.STRICTFP;
+                } else {
+                    return new Modifiers(annotations, visibility, modifiers);
+                }
+                if (modifiers.contains(modifier))
+                {
+                    throw this.error("duplicate modifier: %s", modifier);
+                }
+                modifiers.add(modifier);
+            }
+        }
+    }
+
     private Atom parseExpression()
         throws ParserException, IOException
     {
         return this.parseAssignmentExpression();
     }
 
+    /**
+     * <pre>
+     *   AssignmentExpression:
+     *     ConditionalExpression
+     *     AssignmentExpression = Expression
+     *     AssignmentExpression += Expression
+     *     AssignmentExpression -= Expression
+     *     AssignmentExpression *= Expression
+     *     AssignmentExpression /= Expression
+     *     AssignmentExpression %= Expression
+     *     AssignmentExpression &lt;&lt;= Expression
+     *     AssignmentExpression &gt;&gt;= Expression
+     *     AssignmentExpression &gt;&gt;&gt;= Expression
+     *     AssignmentExpression &amp;= Expression
+     *     AssignmentExpression |= Expression
+     *     AssignmentExpression ^= Expression
+     * </pre>
+     */
     private Atom parseAssignmentExpression()
         throws ParserException, IOException
     {
         Atom atom = this.parseConditionalExpression();
 
-        if (this.scanner.peek().is(Token.Kind.ASSIGN))
+        if (this.scanner.peekRead(Token.Kind.ASSIGN))
         {
-            this.scanner.read();
-
             return new AssignmentExpression(
                     atom.getSourcePosition(),
                     this.toAssignableExpression(atom),
@@ -343,6 +471,7 @@ public final class Parser implements SourceLocatable
                     Token.Kind.ASSIGN_MOD,
                     Token.Kind.ASSIGN_LSH,
                     Token.Kind.ASSIGN_RSH,
+                    Token.Kind.ASSIGN_RSH2,
                     Token.Kind.ASSIGN_BIT_AND,
                     Token.Kind.ASSIGN_BIT_OR,
                     Token.Kind.ASSIGN_BIT_XOR))
@@ -359,6 +488,7 @@ public final class Parser implements SourceLocatable
                     kind == Token.Kind.ASSIGN_MOD ? CompoundAssignmentExpression.Kind.MOD :
                     kind == Token.Kind.ASSIGN_LSH ? CompoundAssignmentExpression.Kind.LSH :
                     kind == Token.Kind.ASSIGN_RSH ? CompoundAssignmentExpression.Kind.RSH :
+                    kind == Token.Kind.ASSIGN_RSH2 ? CompoundAssignmentExpression.Kind.RSH2 :
                     kind == Token.Kind.ASSIGN_BIT_AND ? CompoundAssignmentExpression.Kind.BIT_AND :
                     kind == Token.Kind.ASSIGN_BIT_OR ? CompoundAssignmentExpression.Kind.BIT_OR :
                     CompoundAssignmentExpression.Kind.BIT_XOR,
@@ -374,15 +504,13 @@ public final class Parser implements SourceLocatable
     {
         Atom atom = this.parseConditionalOrExpression();
 
-        if (this.scanner.peek().is(Token.Kind.CONDITIONAL))
+        if (this.scanner.peekRead(Token.Kind.CONDITIONAL))
         {
             Expression condition = this.toExpression(atom);
             Expression trueExpression;
             Expression falseExpression;
 
-            this.scanner.read();
             trueExpression = this.toExpression(this.parseExpression());
-            this.scanner.expect(Token.Kind.COLON);
             falseExpression = this.toExpression(this.parseConditionalExpression());
 
             return new ConditionalExpression(
@@ -408,9 +536,8 @@ public final class Parser implements SourceLocatable
     {
         Atom atom = this.parseConditionalAndExpression();
 
-        while (this.scanner.peek().is(Token.Kind.OR))
+        while (this.scanner.peekRead(Token.Kind.OR))
         {
-            this.scanner.read();
             atom = new BinaryExpression(
                     atom.getSourcePosition(),
                     this.toExpression(atom),
@@ -434,9 +561,8 @@ public final class Parser implements SourceLocatable
     {
         Atom atom = this.parseInclusiveOrExpression();
 
-        while (this.scanner.peek().is(Token.Kind.AND))
+        while (this.scanner.peekRead(Token.Kind.AND))
         {
-            this.scanner.read();
             atom = new BinaryExpression(
                     atom.getSourcePosition(),
                     this.toExpression(atom),
@@ -460,9 +586,8 @@ public final class Parser implements SourceLocatable
     {
         Atom atom = this.parseExclusiveOrExpression();
 
-        while (this.scanner.peek().is(Token.Kind.BIT_OR))
+        while (this.scanner.peekRead(Token.Kind.BIT_OR))
         {
-            this.scanner.read();
             atom = new BinaryExpression(
                     atom.getSourcePosition(),
                     this.toExpression(atom),
@@ -486,9 +611,8 @@ public final class Parser implements SourceLocatable
     {
         Atom atom = this.parseAndExpression();
 
-        while (this.scanner.peek().is(Token.Kind.BIT_XOR))
+        while (this.scanner.peekRead(Token.Kind.BIT_XOR))
         {
-            this.scanner.read();
             atom = new BinaryExpression(
                     atom.getSourcePosition(),
                     this.toExpression(atom),
@@ -512,9 +636,8 @@ public final class Parser implements SourceLocatable
     {
         Atom atom = this.parseEqualityExpression();
 
-        while (this.scanner.peek().is(Token.Kind.BIT_AND))
+        while (this.scanner.peekRead(Token.Kind.BIT_AND))
         {
-            this.scanner.read();
             atom = new BinaryExpression(
                     atom.getSourcePosition(),
                     this.toExpression(atom),
@@ -728,6 +851,82 @@ public final class Parser implements SourceLocatable
         throws ParserException, IOException
     {
         throw this.error("TODO: parse unary expression");
+    }
+
+    private Type parseType()
+        throws ParserException, IOException
+    {
+        if (this.scanner.peek().is(
+                    Token.Kind.KEYWORD_BOOLEAN,
+                    Token.Kind.KEYWORD_BYTE,
+                    Token.Kind.KEYWORD_CHAR,
+                    Token.Kind.KEYWORD_DOUBLE,
+                    Token.Kind.KEYWORD_FLOAT,
+                    Token.Kind.KEYWORD_INT,
+                    Token.Kind.KEYWORD_LONG,
+                    Token.Kind.KEYWORD_SHORT))
+        {
+            Type type = this.parsePrimitiveType();
+
+            while (this.scanner.peek().is(Token.Kind.LBRACK)
+                    && this.scanner.peekNextButOne().is(Token.Kind.RBRACK))
+            {
+                type = new ArrayType(type.getSourcePosition(), type);
+                this.scanner.read();
+                this.scanner.read();
+            }
+
+            return type;
+        }
+
+        return this.parseReferenceType();
+    }
+
+    private PrimitiveType parsePrimitiveType()
+        throws ParserException, IOException
+    {
+        Token token = this.scanner.read();
+        Primitive kind;
+
+        switch (token.getKind())
+        {
+            case KEYWORD_BOOLEAN:
+                kind = Primitive.BOOLEAN;
+                break;
+
+            case KEYWORD_BYTE:
+                kind = Primitive.BYTE;
+                break;
+
+            case KEYWORD_CHAR:
+                kind = Primitive.CHAR;
+                break;
+
+            case KEYWORD_DOUBLE:
+                kind = Primitive.DOUBLE;
+                break;
+
+            case KEYWORD_FLOAT:
+                kind = Primitive.FLOAT;
+                break;
+
+            case KEYWORD_INT:
+                kind = Primitive.INT;
+                break;
+
+            case KEYWORD_LONG:
+                kind = Primitive.LONG;
+                break;
+
+            case KEYWORD_SHORT:
+                kind = Primitive.SHORT;
+                break;
+
+            default:
+                throw this.error("unexpected %s; missing primitive type", token);
+        }
+
+        return new PrimitiveType(token.getSourcePosition(), kind);
     }
 
     private ReferenceType parseReferenceType()
