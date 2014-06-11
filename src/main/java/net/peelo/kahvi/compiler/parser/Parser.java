@@ -6,6 +6,8 @@ import net.peelo.kahvi.compiler.ast.declaration.*;
 import net.peelo.kahvi.compiler.ast.expression.*;
 import net.peelo.kahvi.compiler.ast.statement.*;
 
+import java.io.IOException;
+
 public final class Parser implements SourcePosition
 {
     private final Scanner scanner;
