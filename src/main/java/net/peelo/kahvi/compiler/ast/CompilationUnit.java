@@ -17,7 +17,10 @@ public final class CompilationUnit implements Scope
                            List<ImportDeclaration> imports,
                            List<TypeDeclaration> typeDeclarations)
     {
-        this.packageDeclaration = packageDeclaration;
+        if ((this.packageDeclaration = packageDeclaration) != null)
+        {
+            this.packageDeclaration.setEnclosingScope(this);
+        }
         this.imports = imports;
         this.typeDeclarations = typeDeclarations;
     }

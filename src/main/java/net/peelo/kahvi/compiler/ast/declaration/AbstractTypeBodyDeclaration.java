@@ -15,7 +15,7 @@ public abstract class AbstractTypeBodyDeclaration extends Node
                                        int columnNumber)
     {
         super(lineNumber, columnNumber);
-        this.modifiers = modifiers;
+        (this.modifiers = modifiers).setEnclosingScope(this);
     }
 
     public final Modifiers getModifiers()

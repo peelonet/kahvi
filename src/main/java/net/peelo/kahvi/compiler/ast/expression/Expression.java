@@ -1,8 +1,9 @@
 package net.peelo.kahvi.compiler.ast.expression;
 
 import net.peelo.kahvi.compiler.ast.Atom;
+import net.peelo.kahvi.compiler.ast.annotation.ElementValue;
 
-public abstract class Expression extends Atom
+public abstract class Expression extends Atom implements ElementValue
 {
     public Expression(int lineNumber, int columnNumber)
     {

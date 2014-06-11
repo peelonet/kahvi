@@ -21,7 +21,7 @@ public abstract class TypeDeclaration extends Node
                            int columnNumber)
     {
         super(lineNumber, columnNumber);
-        this.modifiers = modifiers;
+        (this.modifiers = modifiers).setEnclosingScope(this);
         this.name = name;
         for (TypeBodyDeclaration tbd : (this.declarations = declarations))
         {
