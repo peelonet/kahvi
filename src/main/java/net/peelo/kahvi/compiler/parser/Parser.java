@@ -2,6 +2,7 @@ package net.peelo.kahvi.compiler.parser;
 
 import net.peelo.kahvi.compiler.ast.Atom;
 import net.peelo.kahvi.compiler.ast.CompilationUnit;
+import net.peelo.kahvi.compiler.ast.Modifiers;
 import net.peelo.kahvi.compiler.ast.annotation.*;
 import net.peelo.kahvi.compiler.ast.declaration.*;
 import net.peelo.kahvi.compiler.ast.expression.*;
@@ -44,7 +45,124 @@ public final class Parser implements SourceLocatable
     public CompilationUnit parseCompilationUnit()
         throws ParserException, IOException
     {
-        return null; // TODO
+        PackageDeclaration packageDeclaration = null;
+        List<ImportDeclaration> imports = new ArrayList<ImportDeclaration>(3);
+        List<TypeDeclaration> typeDeclarations = new ArrayList<TypeDeclaration>(1);
+
+        if (this.scanner.peek().is(Token.Kind.AT)
+            && this.scanner.peekNextButOne().is(Token.Kind.IDENTIFIER))
+        {
+            List<Annotation> annotations = this.parseAnnotationList();
+
+            if (this.scanner.peek().is(Token.Kind.KEYWORD_PACKAGE)
+                && this.scanner.peekNextButOne().is(Token.Kind.IDENTIFIER))
+            {
+                packageDeclaration = this.parsePackageDeclaration(annotations);
+                while (this.scanner.peek().is(Token.Kind.KEYWORD_IMPORT))
+                {
+                    imports.add(this.parseImportDeclaration());
+                }
+            } else {
+                throw this.error("TODO: parse annotated type declaration");
+            }
+        } else {
+            if (this.scanner.peek().is(Token.Kind.KEYWORD_PACKAGE)
+                && this.scanner.peekNextButOne().is(Token.Kind.IDENTIFIER))
+            {
+                packageDeclaration = this.parsePackageDeclaration(
+                        Collections.<Annotation>emptyList()
+                );
+            }
+            while (this.scanner.peek().is(Token.Kind.KEYWORD_IMPORT))
+            {
+                imports.add(this.parseImportDeclaration());
+            }
+        }
+        while (!this.scanner.peek().is(Token.Kind.EOF))
+        {
+            throw this.error("TODO: parse type declaration");
+        }
+
+        return new CompilationUnit(
+                packageDeclaration,
+                imports,
+                typeDeclarations
+        );
+    }
+
+    private PackageDeclaration parsePackageDeclaration(List<Annotation> annotations)
+        throws ParserException, IOException
+    {
+        SourcePosition position = this.scanner.getSourcePosition();
+        Name packageName;
+
+        this.scanner.expect(Token.Kind.KEYWORD_PACKAGE);
+        packageName = this.parseQualifiedIdentifier();
+        this.scanner.expect(Token.Kind.SEMICOLON);
+
+        return new PackageDeclaration(position, annotations, packageName);
+    }
+
+    private ImportDeclaration parseImportDeclaration()
+        throws ParserException, IOException
+    {
+        SourcePosition position = this.scanner.getSourcePosition();
+        boolean _static;
+        Name className;
+        boolean onDemand;
+
+        this.scanner.expect(Token.Kind.KEYWORD_IMPORT);
+        if (this.scanner.peek().is(Token.Kind.KEYWORD_STATIC))
+        {
+            this.scanner.read();
+            _static = true;
+        } else {
+            _static = false;
+        }
+        className = this.parseQualifiedIdentifier();
+        if (this.scanner.peek().is(Token.Kind.DOT)
+            && this.scanner.peekNextButOne().is(Token.Kind.MUL))
+        {
+            this.scanner.read();
+            this.scanner.read();
+            onDemand = true;
+        } else {
+            onDemand = false;
+        }
+        this.scanner.expect(Token.Kind.SEMICOLON);
+
+        return new ImportDeclaration(
+                position,
+                _static,
+                className,
+                onDemand
+        );
+    }
+
+    private TypeDeclaration parseTypeDeclaration(Modifiers modifiers)
+        throws ParserException, IOException
+    {
+        Token token = this.scanner.peek();
+
+        if (token.is(Token.Kind.KEYWORD_CLASS))
+        {
+            throw this.error("TODO: parse class declaration");
+        }
+        else if (token.is(Token.Kind.KEYWORD_INTERFACE))
+        {
+            throw this.error("TODO: parse interface declaration");
+        }
+        else if (token.is(Token.Kind.KEYWORD_ENUM))
+        {
+            throw this.error("TODO: parse enum declaration");
+        }
+        else if (token.is(Token.Kind.AT)
+                && this.scanner.peekNextButOne().is(Token.Kind.KEYWORD_INTERFACE))
+        {
+            throw this.error("TODO: parse annotation declaration");
+        }
+
+        throw this.error("unexpected %s; missing type declaration", token);
     }
 
     private List<Annotation> parseAnnotationList()
@@ -52,7 +170,8 @@ public final class Parser implements SourceLocatable
     {
         List<Annotation> list = null;
 
-        while (this.scanner.peek().is(Token.Kind.AT))
+        while (this.scanner.peek().is(Token.Kind.AT)
+                && this.scanner.peekNextButOne().is(Token.Kind.IDENTIFIER))
         {
             Annotation annotation = this.parseAnnotation();
 
@@ -76,6 +195,69 @@ public final class Parser implements SourceLocatable
         this.scanner.expect(Token.Kind.AT);
 
         throw this.error("TODO: parse annotation");
+    }
+
+    /**
+     * <pre>
+     *   ElementValue:
+     *     ConditionalExpression
+     *     ElementValueArrayInitializer
+     *     Annotation
+     * </pre>
+     */
+    private ElementValue parseElementValue()
+        throws ParserException, IOException
+    {
+        if (this.scanner.peek().is(Token.Kind.LBRACE))
+        {
+            return this.parseElementValueArrayInitializer();
+        }
+        else if (this.scanner.peek().is(Token.Kind.AT))
+        {
+            return this.parseAnnotation();
+        } else {
+            return this.toExpression(this.parseConditionalExpression());
+        }
+    }
+
+    /**
+     * <pre>
+     *   ElementValueArrayInitializer:
+     *     { [ElementValueList] [,] }
+     *
+     *   ElementValueList:
+     *     ElementValue {, ElementValue}
+     * </pre>
+     */
+    private ElementValueArrayInitializer parseElementValueArrayInitializer()
+        throws ParserException, IOException
+    {
+        List<ElementValue> list = null;
+
+        this.scanner.expect(Token.Kind.LBRACE);
+        while (!this.scanner.peek().is(Token.Kind.RBRACE))
+        {
+            ElementValue value = this.parseElementValue();
+
+            if (list == null)
+            {
+                list = new ArrayList<ElementValue>(3);
+            }
+            list.add(value);
+            if (this.scanner.peek().is(Token.Kind.COMMA))
+            {
+                this.scanner.read();
+            } else {
+                break;
+            }
+        }
+        this.scanner.expect(Token.Kind.RBRACE);
+        if (list == null)
+        {
+            list = Collections.emptyList();
+        }
+
+        return new ElementValueArrayInitializer(list);
     }
 
     private Name parseQualifiedIdentifier()

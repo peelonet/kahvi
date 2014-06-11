@@ -78,6 +78,27 @@ public final class Scanner implements SourceLocatable
         return this.nextToken;
     }
 
+    public Token peekNextButOne()
+        throws ParserException, IOException
+    {
+        if (this.nextToken == null)
+        {
+            if (this.nextButOneToken == null)
+            {
+                this.nextToken = this.produce();
+            } else {
+                this.nextToken = this.nextButOneToken;
+                this.nextButOneToken = null;
+            }
+        }
+        if (this.nextButOneToken == null)
+        {
+            this.nextButOneToken = this.produce();
+        }
+
+        return this.nextButOneToken;
+    }
+
     public void expect(Token.Kind kind)
         throws ParserException, IOException
     {
