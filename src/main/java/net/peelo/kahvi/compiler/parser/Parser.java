@@ -1,5 +1,6 @@
 package net.peelo.kahvi.compiler.parser;
 
+import net.peelo.kahvi.compiler.ast.Atom;
 import net.peelo.kahvi.compiler.ast.CompilationUnit;
 import net.peelo.kahvi.compiler.ast.annotation.*;
 import net.peelo.kahvi.compiler.ast.declaration.*;
@@ -74,13 +75,63 @@ public final class Parser implements SourceLocatable
     {
         this.scanner.expect(Token.Kind.AT);
 
-        return null; // TODO
+        throw this.error("TODO: parse annotation");
     }
 
     private Name parseQualifiedIdentifier()
         throws ParserException, IOException
     {
-        return null; // TODO
+        throw this.error("TODO: parse qualified identifier");
+    }
+
+    private Atom parseExpression()
+        throws ParserException, IOException
+    {
+        throw this.error("TODO: parse expression");
+    }
+
+    private Atom parseConditionalExpression()
+        throws ParserException, IOException
+    {
+        Atom atom = this.parseConditionalOrExpression();
+
+        if (this.scanner.peek().is(Token.Kind.CONDITIONAL))
+        {
+            Expression condition = this.toExpression(atom);
+            Expression trueExpression;
+            Expression falseExpression;
+
+            this.scanner.read();
+            trueExpression = this.toExpression(this.parseExpression());
+            this.scanner.expect(Token.Kind.COLON);
+            falseExpression = this.toExpression(this.parseConditionalExpression());
+
+            return new ConditionalExpression(
+                    condition.getSourcePosition(),
+                    condition,
+                    trueExpression,
+                    falseExpression
+            );
+        }
+
+        return atom;
+    }
+
+    private Atom parseConditionalOrExpression()
+        throws ParserException, IOException
+    {
+        throw this.error("TODO: parse conditional or expression");
+    }
+
+    private Expression toExpression(Atom atom)
+        throws ParserException
+    {
+        if (atom instanceof Expression)
+        {
+            return (Expression) atom;
+        }
+
+        throw this.error("unexpected %s; missing expression", atom);
     }
 
     private ParserException error(String message, Object... args)
