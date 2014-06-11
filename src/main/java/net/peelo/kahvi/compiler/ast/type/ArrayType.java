@@ -33,6 +33,12 @@ public final class ArrayType extends ReferenceType
     }
 
     @Override
+    public <R, P> R accept(TypeArgumentVisitor<R, P> visitor, P p)
+    {
+        return visitor.visitArrayType(this, p);
+    }
+
+    @Override
     public <R, P> R accept(AtomVisitor<R, P> visitor, P p)
     {
         return visitor.visitArrayType(this, p);
