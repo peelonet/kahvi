@@ -12,7 +12,7 @@ import net.peelo.kahvi.compiler.ast.expression.Expression;
  *   while ( <em>expression</em> );
  * </pre>
  */
-public final class DoWhileStatement extends Statement
+public final class DoWhileStatement extends ContinuableStatement
 {
     private final Statement statement;
     private final Expression condition;

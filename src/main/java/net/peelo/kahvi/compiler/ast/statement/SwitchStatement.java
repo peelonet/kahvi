@@ -14,7 +14,7 @@ import java.util.List;
  *   }
  * </pre>
  */
-public final class SwitchStatement extends Statement
+public final class SwitchStatement extends BreakableStatement
 {
     private final Expression expression;
     private final List<CaseStatement> cases;

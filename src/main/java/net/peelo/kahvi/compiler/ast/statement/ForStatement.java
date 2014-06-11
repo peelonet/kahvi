@@ -13,7 +13,7 @@ import java.util.List;
  *       <em>statement</em>
  * </pre>
  */
-public final class ForStatement extends Statement
+public final class ForStatement extends ContinuableStatement
 {
     private final List<Statement> initializer;
     private final Expression condition;

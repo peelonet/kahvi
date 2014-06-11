@@ -11,7 +11,7 @@ import net.peelo.kahvi.compiler.ast.expression.Expression;
  *       <em>statement</em>
  * </pre>
  */
-public final class WhileStatement extends Statement
+public final class WhileStatement extends ContinuableStatement
 {
     private final Expression condition;
     private final Statement statement;

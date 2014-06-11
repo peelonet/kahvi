@@ -10,7 +10,7 @@ import net.peelo.kahvi.compiler.util.Name;
  *   <em>label</em> : <em>statement</em>
  * </pre>
  */
-public final class LabeledStatement extends Statement
+public final class LabeledStatement extends BreakableStatement
 {
     private final Name label;
     private final Statement statement;
