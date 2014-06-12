@@ -4,7 +4,6 @@ AST
 Statements
 ----------
 - Catch
-- EnhancedFor
 - Try
 
 Expressions

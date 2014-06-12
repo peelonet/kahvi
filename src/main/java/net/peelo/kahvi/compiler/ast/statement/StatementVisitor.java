@@ -9,6 +9,7 @@ public interface StatementVisitor<R, P>
     R visitContinueStatement(ContinueStatement s, P p);
     R visitDoWhileStatement(DoWhileStatement s, P p);
     R visitEmptyStatement(EmptyStatement s, P p);
+    R visitEnhancedForStatement(EnhancedForStatement s, P p);
     R visitExpressionStatement(ExpressionStatement s, P p);
     R visitForStatement(ForStatement s, P p);
     R visitIfStatement(IfStatement s, P p);
