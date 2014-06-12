@@ -8,7 +8,7 @@ import java.util.Locale;
  *
  * @see net.peelo.kahvi.compiler.ast.Visibility
  */
-public enum Modifier
+public enum Flag
 {
     ABSTRACT,
     FINAL,

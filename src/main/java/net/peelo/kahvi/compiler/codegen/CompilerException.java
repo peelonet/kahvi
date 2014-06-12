@@ -1,4 +1,4 @@
-package net.peelo.kahvi.compiler;
+package net.peelo.kahvi.compiler.codegen;
 
 import net.peelo.kahvi.compiler.util.SourceLocatable;
 import net.peelo.kahvi.compiler.util.SourcePosition;

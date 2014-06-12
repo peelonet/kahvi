@@ -9,15 +9,15 @@ public final class Modifiers
 {
     private final List<Annotation> annotations;
     private final Visibility visibility;
-    private final Set<Modifier> modifiers;
+    private final Set<Flag> flags;
 
     public Modifiers(List<Annotation> annotations,
                      Visibility visibility,
-                     Set<Modifier> modifiers)
+                     Set<Flag> flags)
     {
         this.annotations = annotations;
         this.visibility = visibility;
-        this.modifiers = modifiers;
+        this.flags = flags;
     }
 
     public List<Annotation> getAnnotations()
@@ -30,49 +30,49 @@ public final class Modifiers
         return this.visibility;
     }
 
-    public Set<Modifier> getModifiers()
+    public Set<Flag> getFlags()
     {
-        return this.modifiers;
+        return this.flags;
     }
 
     public boolean isAbstract()
     {
-        return this.modifiers.contains(Modifier.ABSTRACT);
+        return this.flags.contains(Flag.ABSTRACT);
     }
 
     public boolean isFinal()
     {
-        return this.modifiers.contains(Modifier.FINAL);
+        return this.flags.contains(Flag.FINAL);
     }
 
     public boolean isNative()
     {
-        return this.modifiers.contains(Modifier.NATIVE);
+        return this.flags.contains(Flag.NATIVE);
     }
 
     public boolean isStatic()
     {
-        return this.modifiers.contains(Modifier.STATIC);
+        return this.flags.contains(Flag.STATIC);
     }
 
     public boolean isStrictfp()
     {
-        return this.modifiers.contains(Modifier.STRICTFP);
+        return this.flags.contains(Flag.STRICTFP);
     }
 
     public boolean isSynchronized()
     {
-        return this.modifiers.contains(Modifier.SYNCHRONIZED);
+        return this.flags.contains(Flag.SYNCHRONIZED);
     }
 
     public boolean isTransient()
     {
-        return this.modifiers.contains(Modifier.TRANSIENT);
+        return this.flags.contains(Flag.TRANSIENT);
     }
 
     public boolean isVolatile()
     {
-        return this.modifiers.contains(Modifier.VOLATILE);
+        return this.flags.contains(Flag.VOLATILE);
     }
 
     public void setEnclosingScope(Scope enclosingScope)

@@ -2,7 +2,7 @@ package net.peelo.kahvi.compiler.parser;
 
 import net.peelo.kahvi.compiler.ast.Atom;
 import net.peelo.kahvi.compiler.ast.CompilationUnit;
-import net.peelo.kahvi.compiler.ast.Modifier;
+import net.peelo.kahvi.compiler.ast.Flag;
 import net.peelo.kahvi.compiler.ast.Modifiers;
 import net.peelo.kahvi.compiler.ast.Visibility;
 import net.peelo.kahvi.compiler.ast.annotation.*;
@@ -329,7 +329,7 @@ public final class Parser implements SourceLocatable
         throws ParserException, IOException
     {
         Visibility visibility = null;
-        Set<Modifier> modifiers = EnumSet.noneOf(Modifier.class);
+        Set<Flag> flags = EnumSet.noneOf(Flag.class);
 
         for (;;)
         {
@@ -365,63 +365,63 @@ public final class Parser implements SourceLocatable
                 }
                 visibility = Visibility.PACKAGE;
             } else {
-                Modifier modifier;
+                Flag flag;
 
                 if (this.scanner.peekRead(Token.Kind.KEYWORD_STATIC))
                 {
-                    modifier = Modifier.STATIC;
+                    flag = Flag.STATIC;
                 }
                 else if (this.scanner.peekRead(Token.Kind.KEYWORD_ABSTRACT))
                 {
-                    if (modifiers.contains(Modifier.FINAL))
+                    if (flags.contains(Flag.FINAL))
                     {
                         throw this.error("'abstract' and 'final' are mutually exclusive");
                     }
-                    else if (modifiers.contains(Modifier.NATIVE))
+                    else if (flags.contains(Flag.NATIVE))
                     {
                         throw this.error("'abstract' and 'native' are mutually exclusive");
                     }
-                    modifier = Modifier.ABSTRACT;
+                    flag = Flag.ABSTRACT;
                 }
                 else if (this.scanner.peekRead(Token.Kind.KEYWORD_FINAL))
                 {
-                    if (modifiers.contains(Modifier.ABSTRACT))
+                    if (flags.contains(Flag.ABSTRACT))
                     {
                         throw this.error("'final' are 'abstract' are mutually exclusive");
                     }
-                    modifier = Modifier.FINAL;
+                    flag = Flag.FINAL;
                 }
                 else if (this.scanner.peekRead(Token.Kind.KEYWORD_NATIVE))
                 {
-                    if (modifiers.contains(Modifier.ABSTRACT))
+                    if (flags.contains(Flag.ABSTRACT))
                     {
                         throw this.error("'native' and 'abstract' are mutually exclusive");
                     }
-                    modifier = Modifier.NATIVE;
+                    flag = Flag.NATIVE;
                 }
                 else if (this.scanner.peekRead(Token.Kind.KEYWORD_SYNCHRONIZED))
                 {
-                    modifier = Modifier.SYNCHRONIZED;
+                    flag = Flag.SYNCHRONIZED;
                 }
                 else if (this.scanner.peekRead(Token.Kind.KEYWORD_TRANSIENT))
                 {
-                    modifier = Modifier.TRANSIENT;
+                    flag = Flag.TRANSIENT;
                 }
                 else if (this.scanner.peekRead(Token.Kind.KEYWORD_VOLATILE))
                 {
-                    modifier = Modifier.VOLATILE;
+                    flag = Flag.VOLATILE;
                 }
                 else if (this.scanner.peekRead(Token.Kind.KEYWORD_STRICTFP))
                 {
-                    modifier = Modifier.STRICTFP;
+                    flag = Flag.STRICTFP;
                 } else {
-                    return new Modifiers(annotations, visibility, modifiers);
+                    return new Modifiers(annotations, visibility, flags);
                 }
-                if (modifiers.contains(modifier))
+                if (flags.contains(flag))
                 {
-                    throw this.error("duplicate modifier: %s", modifier);
+                    throw this.error("duplicate modifier: %s", flag);
                 }
-                modifiers.add(modifier);
+                flags.add(flag);
             }
         }
     }
