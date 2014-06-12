@@ -1,31 +1,28 @@
 package net.peelo.kahvi.compiler.ast.declaration;
 
 import net.peelo.kahvi.compiler.ast.Modifiers;
-import net.peelo.kahvi.compiler.ast.statement.Statement;
+import net.peelo.kahvi.compiler.ast.statement.BlockStatement;
 import net.peelo.kahvi.compiler.util.SourcePosition;
 
 import java.util.List;
 
 public abstract class ExecutableDeclaration extends AbstractTypeBodyDeclaration
 {
-    private final List<Statement> statements;
+    private final BlockStatement body;
 
     public ExecutableDeclaration(SourcePosition position,
                                  Modifiers modifiers,
-                                 List<Statement> statements)
+                                 BlockStatement body)
     {
         super(position, modifiers);
-        if ((this.statements = statements) != null)
+        if ((this.body = body) != null)
         {
-            for (Statement s : this.statements)
-            {
-                s.setEnclosingScope(this);
-            }
+            this.body.setEnclosingScope(this);
         }
     }
 
-    public final List<Statement> getStatements()
+    public final BlockStatement getBody()
     {
-        return this.statements;
+        return this.body;
     }
 }

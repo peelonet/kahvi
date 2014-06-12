@@ -11,23 +11,25 @@ public abstract class TypeDeclaration extends Node
     implements TypeBodyDeclaration
 {
     private final Modifiers modifiers;
-    private final String name;
-    private final List<TypeBodyDeclaration> declarations;
+    private final String simpleName;
+    private final List<TypeBodyDeclaration> members;
     private Scope enclosingScope;
 
     public TypeDeclaration(SourcePosition position,
                            Modifiers modifiers,
-                           String name,
-                           List<TypeBodyDeclaration> declarations)
+                           String simpleName,
+                           List<TypeBodyDeclaration> members)
     {
         super(position);
         (this.modifiers = modifiers).setEnclosingScope(this);
-        this.name = name;
-        for (TypeBodyDeclaration tbd : (this.declarations = declarations))
+        this.simpleName = simpleName;
+        for (TypeBodyDeclaration tbd : (this.members = members))
         {
             tbd.setDeclaringType(this);
         }
     }
+
+    public abstract <R, P> R accept(TypeDeclarationVisitor<R, P> visitor, P p);
 
     public final Modifiers getModifiers()
     {
@@ -38,14 +40,14 @@ public abstract class TypeDeclaration extends Node
      * Returns simple name of the type declaration, or {@code null} if this
      * type is anonymous.
      */
-    public final String getName()
+    public final String getSimpleName()
     {
-        return this.name;
+        return this.simpleName;
     }
 
-    public final List<TypeBodyDeclaration> getDeclarations()
+    public final List<TypeBodyDeclaration> getMembers()
     {
-        return this.declarations;
+        return this.members;
     }
 
     @Override
@@ -79,5 +81,39 @@ public abstract class TypeDeclaration extends Node
     public final void setDeclaringType(TypeDeclaration declaringType)
     {
         this.setEnclosingScope(declaringType);
+    }
+
+    @Override
+    public final ExecutableDeclaration getEnclosingExecutable()
+    {
+        Scope scope = this.enclosingScope;
+
+        while (scope != null)
+        {
+            if (scope instanceof ExecutableDeclaration)
+            {
+                return (ExecutableDeclaration) scope;
+            }
+            scope = scope.getEnclosingScope();
+        }
+
+        return null;
+    }
+
+    @Override
+    public final TypeDeclaration getEnclosingType()
+    {
+        Scope scope = this.enclosingScope;
+
+        while (scope != null)
+        {
+            if (scope instanceof TypeDeclaration)
+            {
+                return (TypeDeclaration) scope;
+            }
+            scope = scope.getEnclosingScope();
+        }
+
+        return null;
     }
 }
