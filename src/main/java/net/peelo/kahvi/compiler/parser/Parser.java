@@ -41,7 +41,12 @@ public final class Parser implements SourceLocatable
     @Override
     public SourcePosition getSourcePosition()
     {
-        return this.scanner.getSourcePosition();
+        if (this.nextToken == null)
+        {
+            return this.scanner.getSourcePosition();
+        } else {
+            return this.nextToken.getSourcePosition();
+        }
     }
 
     /**
@@ -90,7 +95,7 @@ public final class Parser implements SourceLocatable
     private PackageDeclaration parsePackageDeclaration()
         throws ParserException, IOException
     {
-        SourcePosition position = this.scanner.getSourcePosition();
+        SourcePosition position = this.getSourcePosition();
         Name packageName;
 
         this.expect(Token.Kind.KW_PACKAGE);
@@ -107,7 +112,7 @@ public final class Parser implements SourceLocatable
     private ImportDeclaration parseImportDeclaration()
         throws ParserException, IOException
     {
-        SourcePosition position = this.scanner.getSourcePosition();
+        SourcePosition position = this.getSourcePosition();
         boolean _static;
         Name className;
         boolean onDemand;
@@ -181,11 +186,11 @@ public final class Parser implements SourceLocatable
     private ClassDeclaration parseClassDeclaration(Modifiers modifiers)
         throws ParserException, IOException
     {
-        SourcePosition position = this.scanner.getSourcePosition();
+        SourcePosition position = this.getSourcePosition();
         String simpleName;
         List<TypeParameterDeclaration> typeParameters;
-        ReferenceType extendsClause;
-        List<ReferenceType> implementsClause;
+        ClassType extendsClause;
+        List<ClassType> implementsClause;
         List<TypeBodyDeclaration> members = new ArrayList<TypeBodyDeclaration>(3);
 
         this.expect(Token.Kind.KW_CLASS);
@@ -198,13 +203,13 @@ public final class Parser implements SourceLocatable
         }
         if (this.peekRead(Token.Kind.KW_EXTENDS))
         {
-            extendsClause = this.parseReferenceType();
+            extendsClause = this.parseClassType();
         } else {
             extendsClause = null;
         }
         if (this.peekRead(Token.Kind.KW_IMPLEMENTS))
         {
-            implementsClause = this.parseReferenceTypeList();
+            implementsClause = this.parseClassTypeList();
         } else {
             implementsClause = Collections.emptyList();
         }
@@ -293,7 +298,7 @@ public final class Parser implements SourceLocatable
     private Annotation parseAnnotation()
         throws ParserException, IOException
     {
-        SourcePosition position = this.scanner.getSourcePosition();
+        SourcePosition position = this.getSourcePosition();
         Name name;
 
         this.expect(Token.Kind.AT);
@@ -1027,7 +1032,7 @@ public final class Parser implements SourceLocatable
     private ClassType parseClassType()
         throws ParserException, IOException
     {
-        SourcePosition position = this.scanner.getSourcePosition();
+        SourcePosition position = this.getSourcePosition();
         Name name = this.parseQualifiedIdentifier();
         List<TypeArgument> arguments;
 
@@ -1043,11 +1048,51 @@ public final class Parser implements SourceLocatable
         return new ClassType(position, name, arguments);
     }
 
+    private List<ClassType> parseClassTypeList()
+        throws ParserException, IOException
+    {
+        List<ClassType> list = new ArrayList<ClassType>(3);
+
+        list.add(this.parseClassType());
+        while (this.peekRead(Token.Kind.COMMA))
+        {
+            list.add(this.parseClassType());
+        }
+
+        return list;
+    }
+
     private ReferenceType parseReferenceType()
         throws ParserException, IOException
     {
-        ReferenceType type = this.parseClassType();
+        ReferenceType type;
 
+        if (this.peek(Token.Kind.KW_BOOLEAN,
+                      Token.Kind.KW_BYTE,
+                      Token.Kind.KW_CHAR,
+                      Token.Kind.KW_DOUBLE,
+                      Token.Kind.KW_FLOAT,
+                      Token.Kind.KW_INT,
+                      Token.Kind.KW_LONG,
+                      Token.Kind.KW_SHORT))
+        {
+            PrimitiveType primitive = this.parsePrimitiveType();
+
+            if (!this.peek(Token.Kind.LBRACK)
+                || !this.peekNextButOne(Token.Kind.RBRACK))
+            {
+                throw this.error(
+                        primitive,
+                        "unexpected %s; missing reference type",
+                        primitive
+                );
+            }
+            this.read();
+            this.read();
+            type = new ArrayType(primitive.getSourcePosition(), primitive);
+        } else {
+            type = this.parseClassType();
+        }
         while (this.peek(Token.Kind.LBRACK)
                 && this.peekNextButOne(Token.Kind.RBRACK))
         {
@@ -1089,7 +1134,7 @@ public final class Parser implements SourceLocatable
     private TypeParameterDeclaration parseTypeParameter()
         throws ParserException, IOException
     {
-        SourcePosition position = this.scanner.getSourcePosition();
+        SourcePosition position = this.getSourcePosition();
         String name = this.readIdentifier();
         List<ReferenceType> bounds;
 
@@ -1143,7 +1188,7 @@ public final class Parser implements SourceLocatable
     {
         if (this.peekRead(Token.Kind.CONDITIONAL))
         {
-            SourcePosition position = this.scanner.getSourcePosition();
+            SourcePosition position = this.getSourcePosition();
             Wildcard.Kind kind;
             ReferenceType bound;
 
@@ -1359,7 +1404,7 @@ public final class Parser implements SourceLocatable
         }
 
         return new ParserException(
-                location == null ? this.scanner.getSourcePosition()
+                location == null ? this.getSourcePosition()
                                  : location.getSourcePosition(),
                 message
         );

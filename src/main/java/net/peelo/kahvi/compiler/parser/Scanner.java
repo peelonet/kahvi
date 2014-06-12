@@ -3,6 +3,7 @@ package net.peelo.kahvi.compiler.parser;
 import net.peelo.kahvi.compiler.util.SourceLocatable;
 import net.peelo.kahvi.compiler.util.SourcePosition;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.HashMap;
@@ -10,6 +11,7 @@ import java.util.Map;
 
 public final class Scanner implements SourceLocatable
 {
+    private final File file;
     private Reader input;
     private int lineNumber;
     private int columnNumber;
@@ -18,17 +20,42 @@ public final class Scanner implements SourceLocatable
     private boolean crLfPending;
     private int pushbackChar;
 
-    public Scanner(Reader input, int lineNumber, int columnNumber)
+    public Scanner(Reader input)
     {
+        this(null, input, 1, 0);
+    }
+
+    public Scanner(File file, Reader input)
+    {
+        this(file, input, 1, 0);
+    }
+
+    public Scanner(Reader input,
+                   int initialLineNumber,
+                   int initialColumnNumber)
+    {
+        this(null, input, initialLineNumber, initialColumnNumber);
+    }
+
+    public Scanner(File file,
+                   Reader input,
+                   int initialLineNumber,
+                   int initialColumnNumber)
+    {
+        this.file = file;
         this.input = input;
-        this.lineNumber = lineNumber;
-        this.columnNumber = columnNumber;
+        this.lineNumber = initialLineNumber;
+        this.columnNumber = initialColumnNumber;
     }
 
     @Override
     public SourcePosition getSourcePosition()
     {
-        return new SourcePosition(this.lineNumber, this.columnNumber);
+        return new SourcePosition(
+                this.file,
+                this.lineNumber,
+                this.columnNumber
+        );
     }
 
     /**
@@ -350,6 +377,7 @@ public final class Scanner implements SourceLocatable
         return new Token(
                 kind,
                 text,
+                this.file,
                 this.nextTokenLineNumber,
                 this.nextTokenColumnNumber
         );

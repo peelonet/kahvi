@@ -4,7 +4,8 @@ import net.peelo.kahvi.compiler.ast.Atom;
 import net.peelo.kahvi.compiler.ast.annotation.ElementValue;
 import net.peelo.kahvi.compiler.util.SourcePosition;
 
-public abstract class Expression extends Atom implements ElementValue
+public abstract class Expression extends Atom
+    implements ElementValue, VariableInitializer
 {
     public Expression(SourcePosition position)
     {

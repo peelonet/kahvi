@@ -71,6 +71,12 @@ public final class CompoundAssignmentExpression extends Expression
     }
 
     @Override
+    public <R, P> R accept(VariableInitializerVisitor<R, P> visitor, P p)
+    {
+        return visitor.visitCompoundAssignmentExpression(this, p);
+    }
+
+    @Override
     public <R, P> R accept(AtomVisitor<R, P> visitor, P p)
     {
         return visitor.visitCompoundAssignmentExpression(this, p);

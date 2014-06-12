@@ -3,6 +3,7 @@ package net.peelo.kahvi.compiler.parser;
 import net.peelo.kahvi.compiler.util.SourceLocatable;
 import net.peelo.kahvi.compiler.util.SourcePosition;
 
+import java.io.File;
 import java.io.Serializable;
 
 public final class Token implements SourceLocatable, Serializable
@@ -138,17 +139,20 @@ public final class Token implements SourceLocatable, Serializable
 
     private final Kind kind;
     private final String text;
+    private final File file;
     private final int lineNumber;
     private final int columnNumber;
     private transient SourcePosition position;
 
     public Token(Kind kind,
                  String text,
+                 File file,
                  int lineNumber,
                  int columnNumber)
     {
         this.kind = kind;
         this.text = text;
+        this.file = file;
         this.lineNumber = lineNumber;
         this.columnNumber = columnNumber;
     }
@@ -169,6 +173,7 @@ public final class Token implements SourceLocatable, Serializable
         if (this.position == null)
         {
             this.position = new SourcePosition(
+                    this.file,
                     this.lineNumber,
                     this.columnNumber
             );

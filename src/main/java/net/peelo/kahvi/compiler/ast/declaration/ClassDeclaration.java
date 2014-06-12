@@ -1,7 +1,7 @@
 package net.peelo.kahvi.compiler.ast.declaration;
 
 import net.peelo.kahvi.compiler.ast.Modifiers;
-import net.peelo.kahvi.compiler.ast.type.ReferenceType;
+import net.peelo.kahvi.compiler.ast.type.ClassType;
 import net.peelo.kahvi.compiler.util.SourcePosition;
 
 import java.util.List;
@@ -9,15 +9,15 @@ import java.util.List;
 public final class ClassDeclaration extends TypeDeclaration
 {
     private final List<TypeParameterDeclaration> typeParameters;
-    private final ReferenceType extendsClause;
-    private final List<ReferenceType> implementsClause;
+    private final ClassType extendsClause;
+    private final List<ClassType> implementsClause;
 
     public ClassDeclaration(SourcePosition position,
                             Modifiers modifiers,
                             String simpleName,
                             List<TypeParameterDeclaration> typeParameters,
-                            ReferenceType extendsClause,
-                            List<ReferenceType> implementsClause,
+                            ClassType extendsClause,
+                            List<ClassType> implementsClause,
                             List<TypeBodyDeclaration> members)
     {
         super(position, modifiers, simpleName, members);
@@ -29,9 +29,9 @@ public final class ClassDeclaration extends TypeDeclaration
         {
             this.extendsClause.setEnclosingScope(this);
         }
-        for (ReferenceType rt : (this.implementsClause = implementsClause))
+        for (ClassType ct : (this.implementsClause = implementsClause))
         {
-            rt.setEnclosingScope(this);
+            ct.setEnclosingScope(this);
         }
     }
 
@@ -40,12 +40,12 @@ public final class ClassDeclaration extends TypeDeclaration
         return this.typeParameters;
     }
 
-    public ReferenceType getExtendsClause()
+    public ClassType getExtendsClause()
     {
         return this.extendsClause;
     }
 
-    public List<ReferenceType> getImplementsClause()
+    public List<ClassType> getImplementsClause()
     {
         return this.implementsClause;
     }
