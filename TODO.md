@@ -6,7 +6,6 @@ Statements
 - Catch
 - EnhancedFor
 - Try
-- Variable
 
 Expressions
 -----------
