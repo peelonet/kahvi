@@ -57,57 +57,51 @@ public final class Parser implements SourceLocatable
         List<ImportDeclaration> imports = new ArrayList<ImportDeclaration>(3);
         List<TypeDeclaration> typeDeclarations = new ArrayList<TypeDeclaration>(1);
 
-        if (this.peek(Token.Kind.AT) && this.peekNextButOne(Token.Kind.IDENTIFIER))
+        if (this.peek(Token.Kind.KW_PACKAGE)
+            && this.peekNextButOne(Token.Kind.IDENTIFIER))
         {
-            List<Annotation> annotations = this.parseAnnotationList();
-
-            if (this.peek(Token.Kind.KEYWORD_PACKAGE)
-                && this.peekNextButOne(Token.Kind.IDENTIFIER))
-            {
-                packageDeclaration = this.parsePackageDeclaration(annotations);
-                while (this.peek(Token.Kind.KEYWORD_IMPORT))
-                {
-                    imports.add(this.parseImportDeclaration());
-                }
-            } else {
-                typeDeclarations.add(this.parseTypeDeclaration(this.parseModifiers(annotations)));
-            }
+            packageDeclaration = this.parsePackageDeclaration();
         } else {
-            if (this.peek(Token.Kind.KEYWORD_PACKAGE)
-                && this.peekNextButOne(Token.Kind.IDENTIFIER))
+            packageDeclaration = null;
+        }
+        while (this.peek(Token.Kind.KW_IMPORT))
+        {
+            imports.add(this.parseImportDeclaration());
+        }
+        for (;;)
+        {
+            if (this.peek(Token.Kind.EOF))
             {
-                packageDeclaration = this.parsePackageDeclaration(
-                        Collections.<Annotation>emptyList()
+                return new CompilationUnit(
+                        packageDeclaration,
+                        imports,
+                        typeDeclarations
                 );
             }
-            while (this.peek(Token.Kind.KEYWORD_IMPORT))
+            else if (!this.peekRead(Token.Kind.SEMICOLON))
             {
-                imports.add(this.parseImportDeclaration());
+                typeDeclarations.add(
+                        this.parseTypeDeclaration(this.parseModifiers())
+                );
             }
         }
-        while (!this.peek(Token.Kind.EOF))
-        {
-            typeDeclarations.add(this.parseTypeDeclaration(this.parseModifiers()));
-        }
-
-        return new CompilationUnit(
-                packageDeclaration,
-                imports,
-                typeDeclarations
-        );
     }
 
-    private PackageDeclaration parsePackageDeclaration(List<Annotation> annotations)
+    private PackageDeclaration parsePackageDeclaration()
         throws ParserException, IOException
     {
         SourcePosition position = this.scanner.getSourcePosition();
         Name packageName;
 
-        this.expect(Token.Kind.KEYWORD_PACKAGE);
+        this.expect(Token.Kind.KW_PACKAGE);
         packageName = this.parseQualifiedIdentifier();
         this.expect(Token.Kind.SEMICOLON);
 
-        return new PackageDeclaration(position, annotations, packageName);
+        return new PackageDeclaration(
+                position,
+                Collections.<Annotation>emptyList(),
+                packageName
+        );
     }
 
     private ImportDeclaration parseImportDeclaration()
@@ -118,8 +112,8 @@ public final class Parser implements SourceLocatable
         Name className;
         boolean onDemand;
 
-        this.expect(Token.Kind.KEYWORD_IMPORT);
-        if (this.peek(Token.Kind.KEYWORD_STATIC))
+        this.expect(Token.Kind.KW_IMPORT);
+        if (this.peek(Token.Kind.KW_STATIC))
         {
             this.read();
             _static = true;
@@ -145,22 +139,38 @@ public final class Parser implements SourceLocatable
         );
     }
 
+    /**
+     * <pre>
+     *   TypeDeclaration:
+     *     ClassDeclaration
+     *     InterfaceDeclaration
+     *     ;
+     *
+     *   ClassDeclaration:
+     *     NormalClassDeclaration
+     *     EnumDeclaration
+     *
+     *   InterfaceDeclaration:
+     *     NormalInterfaceDeclaration
+     *     AnnotationTypeDeclaration
+     * </pre>
+     */
     private TypeDeclaration parseTypeDeclaration(Modifiers modifiers)
         throws ParserException, IOException
     {
-        if (this.peek(Token.Kind.KEYWORD_CLASS))
+        if (this.peek(Token.Kind.KW_CLASS))
         {
-            throw this.error("TODO: parse class declaration");
+            return this.parseClassDeclaration(modifiers);
         }
-        else if (this.peek(Token.Kind.KEYWORD_INTERFACE))
+        else if (this.peek(Token.Kind.KW_INTERFACE))
         {
             throw this.error("TODO: parse interface declaration");
         }
-        else if (this.peek(Token.Kind.KEYWORD_ENUM))
+        else if (this.peek(Token.Kind.KW_ENUM))
         {
             throw this.error("TODO: parse enum declaration");
         }
-        else if (this.peek(Token.Kind.AT) && this.peekNextButOne(Token.Kind.KEYWORD_INTERFACE))
+        else if (this.peek(Token.Kind.AT) && this.peekNextButOne(Token.Kind.KW_INTERFACE))
         {
             throw this.error("TODO: parse annotation declaration");
         }
@@ -168,26 +178,98 @@ public final class Parser implements SourceLocatable
         throw this.error("unexpected %s; missing type declaration", this.nextToken);
     }
 
-    private List<Annotation> parseAnnotationList()
+    private ClassDeclaration parseClassDeclaration(Modifiers modifiers)
         throws ParserException, IOException
     {
-        List<Annotation> list = null;
+        SourcePosition position = this.scanner.getSourcePosition();
+        String simpleName;
+        List<TypeParameterDeclaration> typeParameters;
+        ReferenceType extendsClause;
+        List<ReferenceType> implementsClause;
+        List<TypeBodyDeclaration> members = new ArrayList<TypeBodyDeclaration>(3);
 
-        while (this.peek(Token.Kind.AT) && this.peekNextButOne(Token.Kind.IDENTIFIER))
+        this.expect(Token.Kind.KW_CLASS);
+        simpleName = this.readIdentifier();
+        if (this.peek(Token.Kind.LT))
         {
-            Annotation annotation = this.parseAnnotation();
-
-            if (list == null)
-            {
-                list = new ArrayList<Annotation>(3);
-            }
-            list.add(annotation);
-        }
-        if (list == null)
-        {
-            return Collections.emptyList();
+            typeParameters = this.parseTypeParameterList();
         } else {
-            return list;
+            typeParameters = Collections.emptyList();
+        }
+        if (this.peekRead(Token.Kind.KW_EXTENDS))
+        {
+            extendsClause = this.parseReferenceType();
+        } else {
+            extendsClause = null;
+        }
+        if (this.peekRead(Token.Kind.KW_IMPLEMENTS))
+        {
+            implementsClause = this.parseReferenceTypeList();
+        } else {
+            implementsClause = Collections.emptyList();
+        }
+        this.expect(Token.Kind.LBRACE);
+        for (;;)
+        {
+            if (this.peekRead(Token.Kind.RBRACE))
+            {
+                return new ClassDeclaration(
+                        position,
+                        modifiers,
+                        simpleName,
+                        typeParameters,
+                        extendsClause,
+                        implementsClause,
+                        members
+                );
+            }
+            else if (!this.peekRead(Token.Kind.SEMICOLON))
+            {
+                members.add(this.parseClassBodyDeclaration(simpleName));
+            }
+        }
+    }
+
+    private TypeBodyDeclaration parseClassBodyDeclaration(String className)
+        throws ParserException, IOException
+    {
+        Modifiers modifiers = this.parseModifiers();
+
+        if (this.peek(Token.Kind.KW_CLASS))
+        {
+            return this.parseClassDeclaration(modifiers);
+        }
+        else if (this.peek(Token.Kind.KW_INTERFACE))
+        {
+            throw this.error("TODO: member interface declaration");
+        }
+        else if (this.peek(Token.Kind.KW_ENUM))
+        {
+            throw this.error("TODO: member enum declaration");
+        }
+        else if (this.peek(Token.Kind.LBRACE))
+        {
+            throw this.error("TODO: initializer declaration");
+        }
+        else if (this.peek(className)
+                && this.peekNextButOne(Token.Kind.LPAREN))
+        {
+            throw this.error("TODO: constructor declaration");
+        }
+        else if (this.peek(Token.Kind.IDENTIFIER)
+                && this.peekNextButOne(Token.Kind.LPAREN))
+        {
+            throw this.error("TODO: method declaration");
+        } else {
+            Type type = this.parseType();
+            String name = this.readIdentifier();
+
+            if (this.peek(Token.Kind.LPAREN))
+            {
+                throw this.error("TODO: method declaration");
+            } else {
+                throw this.error("TODO: field/property declaration");
+            }
         }
     }
 
@@ -212,13 +294,12 @@ public final class Parser implements SourceLocatable
         throws ParserException, IOException
     {
         SourcePosition position = this.scanner.getSourcePosition();
-        Name className;
+        Name name;
 
         this.expect(Token.Kind.AT);
-        className = this.parseQualifiedIdentifier();
-        if (this.peek(Token.Kind.LPAREN))
+        name = this.parseQualifiedIdentifier();
+        if (this.peekRead(Token.Kind.LPAREN))
         {
-            this.read();
             if (this.peek(Token.Kind.IDENTIFIER)
                 && this.peekNextButOne(Token.Kind.ASSIGN))
             {
@@ -228,7 +309,31 @@ public final class Parser implements SourceLocatable
             }
         }
 
-        throw this.error("TODO: parse marker annotation");
+        return new MarkerAnnotation(new ClassType(position, name));
+    }
+
+    private List<Annotation> parseAnnotationList()
+        throws ParserException, IOException
+    {
+        List<Annotation> list = null;
+
+        while (this.peek(Token.Kind.AT)
+                && this.peekNextButOne(Token.Kind.IDENTIFIER))
+        {
+            Annotation annotation = this.parseAnnotation();
+
+            if (list == null)
+            {
+                list = new ArrayList<Annotation>(3);
+            }
+            list.add(annotation);
+        }
+        if (list == null)
+        {
+            return Collections.emptyList();
+        } else {
+            return list;
+        }
     }
 
     /**
@@ -297,15 +402,10 @@ public final class Parser implements SourceLocatable
     private Name parseQualifiedIdentifier()
         throws ParserException, IOException
     {
-        Token token = this.read();
-        Name result;
+        Name result = new Name(null, this.readIdentifier());
 
-        if (!token.is(Token.Kind.IDENTIFIER))
-        {
-            throw this.error(token, "unexpected %s; missing identifier", token);
-        }
-        result = new Name(null, token.getText());
-        while (this.peek(Token.Kind.DOT) && this.peekNextButOne(Token.Kind.IDENTIFIER))
+        while (this.peek(Token.Kind.DOT)
+                && this.peekNextButOne(Token.Kind.IDENTIFIER))
         {
             this.read();
             result = new Name(result, this.read().getText());
@@ -328,7 +428,7 @@ public final class Parser implements SourceLocatable
 
         for (;;)
         {
-            if (this.peekRead(Token.Kind.KEYWORD_PUBLIC))
+            if (this.peekRead(Token.Kind.KW_PUBLIC))
             {
                 if (visibility != null)
                 {
@@ -336,7 +436,7 @@ public final class Parser implements SourceLocatable
                 }
                 visibility = Visibility.PUBLIC;
             }
-            else if (this.peekRead(Token.Kind.KEYWORD_PROTECTED))
+            else if (this.peekRead(Token.Kind.KW_PROTECTED))
             {
                 if (visibility != null)
                 {
@@ -344,7 +444,7 @@ public final class Parser implements SourceLocatable
                 }
                 visibility = Visibility.PROTECTED;
             }
-            else if (this.peekRead(Token.Kind.KEYWORD_PRIVATE))
+            else if (this.peekRead(Token.Kind.KW_PRIVATE))
             {
                 if (visibility != null)
                 {
@@ -352,7 +452,7 @@ public final class Parser implements SourceLocatable
                 }
                 visibility = Visibility.PRIVATE;
             }
-            else if (this.peekRead(Token.Kind.KEYWORD_PACKAGE))
+            else if (this.peekRead(Token.Kind.KW_PACKAGE))
             {
                 if (visibility != null)
                 {
@@ -362,11 +462,11 @@ public final class Parser implements SourceLocatable
             } else {
                 Flag flag;
 
-                if (this.peekRead(Token.Kind.KEYWORD_STATIC))
+                if (this.peekRead(Token.Kind.KW_STATIC))
                 {
                     flag = Flag.STATIC;
                 }
-                else if (this.peekRead(Token.Kind.KEYWORD_ABSTRACT))
+                else if (this.peekRead(Token.Kind.KW_ABSTRACT))
                 {
                     if (flags.contains(Flag.FINAL))
                     {
@@ -378,7 +478,7 @@ public final class Parser implements SourceLocatable
                     }
                     flag = Flag.ABSTRACT;
                 }
-                else if (this.peekRead(Token.Kind.KEYWORD_FINAL))
+                else if (this.peekRead(Token.Kind.KW_FINAL))
                 {
                     if (flags.contains(Flag.ABSTRACT))
                     {
@@ -386,7 +486,7 @@ public final class Parser implements SourceLocatable
                     }
                     flag = Flag.FINAL;
                 }
-                else if (this.peekRead(Token.Kind.KEYWORD_NATIVE))
+                else if (this.peekRead(Token.Kind.KW_NATIVE))
                 {
                     if (flags.contains(Flag.ABSTRACT))
                     {
@@ -394,19 +494,19 @@ public final class Parser implements SourceLocatable
                     }
                     flag = Flag.NATIVE;
                 }
-                else if (this.peekRead(Token.Kind.KEYWORD_SYNCHRONIZED))
+                else if (this.peekRead(Token.Kind.KW_SYNCHRONIZED))
                 {
                     flag = Flag.SYNCHRONIZED;
                 }
-                else if (this.peekRead(Token.Kind.KEYWORD_TRANSIENT))
+                else if (this.peekRead(Token.Kind.KW_TRANSIENT))
                 {
                     flag = Flag.TRANSIENT;
                 }
-                else if (this.peekRead(Token.Kind.KEYWORD_VOLATILE))
+                else if (this.peekRead(Token.Kind.KW_VOLATILE))
                 {
                     flag = Flag.VOLATILE;
                 }
-                else if (this.peekRead(Token.Kind.KEYWORD_STRICTFP))
+                else if (this.peekRead(Token.Kind.KW_STRICTFP))
                 {
                     flag = Flag.STRICTFP;
                 } else {
@@ -708,7 +808,7 @@ public final class Parser implements SourceLocatable
                         this.toExpression(this.parseShiftExpression())
                 );
             }
-            else if (this.peekRead(Token.Kind.KEYWORD_INSTANCEOF))
+            else if (this.peekRead(Token.Kind.KW_INSTANCEOF))
             {
                 atom = new InstanceOfExpression(
                         atom.getSourcePosition(),
@@ -847,29 +947,30 @@ public final class Parser implements SourceLocatable
     private Type parseType()
         throws ParserException, IOException
     {
-        if (this.peek(Token.Kind.KEYWORD_BOOLEAN,
-                      Token.Kind.KEYWORD_BYTE,
-                      Token.Kind.KEYWORD_CHAR,
-                      Token.Kind.KEYWORD_DOUBLE,
-                      Token.Kind.KEYWORD_FLOAT,
-                      Token.Kind.KEYWORD_INT,
-                      Token.Kind.KEYWORD_LONG,
-                      Token.Kind.KEYWORD_SHORT))
+        Type type;
+
+        if (this.peek(Token.Kind.KW_BOOLEAN,
+                      Token.Kind.KW_BYTE,
+                      Token.Kind.KW_CHAR,
+                      Token.Kind.KW_DOUBLE,
+                      Token.Kind.KW_FLOAT,
+                      Token.Kind.KW_INT,
+                      Token.Kind.KW_LONG,
+                      Token.Kind.KW_SHORT))
         {
-            Type type = this.parsePrimitiveType();
-
-            while (this.peek(Token.Kind.LBRACK)
-                    && this.peekNextButOne(Token.Kind.RBRACK))
-            {
-                type = new ArrayType(type.getSourcePosition(), type);
-                this.read();
-                this.read();
-            }
-
-            return type;
+            type = this.parsePrimitiveType();
+        } else {
+            type = this.parseClassType();
+        }
+        while (this.peek(Token.Kind.LBRACK)
+                && this.peekNextButOne(Token.Kind.RBRACK))
+        {
+            this.read();
+            this.read();
+            type = new ArrayType(type.getSourcePosition(), type);
         }
 
-        return this.parseReferenceType();
+        return type;
     }
 
     private PrimitiveType parsePrimitiveType()
@@ -880,35 +981,35 @@ public final class Parser implements SourceLocatable
 
         switch (token.getKind())
         {
-            case KEYWORD_BOOLEAN:
+            case KW_BOOLEAN:
                 kind = Primitive.BOOLEAN;
                 break;
 
-            case KEYWORD_BYTE:
+            case KW_BYTE:
                 kind = Primitive.BYTE;
                 break;
 
-            case KEYWORD_CHAR:
+            case KW_CHAR:
                 kind = Primitive.CHAR;
                 break;
 
-            case KEYWORD_DOUBLE:
+            case KW_DOUBLE:
                 kind = Primitive.DOUBLE;
                 break;
 
-            case KEYWORD_FLOAT:
+            case KW_FLOAT:
                 kind = Primitive.FLOAT;
                 break;
 
-            case KEYWORD_INT:
+            case KW_INT:
                 kind = Primitive.INT;
                 break;
 
-            case KEYWORD_LONG:
+            case KW_LONG:
                 kind = Primitive.LONG;
                 break;
 
-            case KEYWORD_SHORT:
+            case KW_SHORT:
                 kind = Primitive.SHORT;
                 break;
 
@@ -923,10 +1024,161 @@ public final class Parser implements SourceLocatable
         return new PrimitiveType(token.getSourcePosition(), kind);
     }
 
+    private ClassType parseClassType()
+        throws ParserException, IOException
+    {
+        SourcePosition position = this.scanner.getSourcePosition();
+        Name name = this.parseQualifiedIdentifier();
+        List<TypeArgument> arguments;
+
+        if (this.peek(Token.Kind.LT))
+        {
+            this.read();
+            arguments = this.parseTypeArgumentList();
+            this.expect(Token.Kind.GT);
+        } else {
+            arguments = Collections.emptyList();
+        }
+
+        return new ClassType(position, name, arguments);
+    }
+
     private ReferenceType parseReferenceType()
         throws ParserException, IOException
     {
-        throw this.error("TODO: parse reference type");
+        ReferenceType type = this.parseClassType();
+
+        while (this.peek(Token.Kind.LBRACK)
+                && this.peekNextButOne(Token.Kind.RBRACK))
+        {
+            this.read();
+            this.read();
+            type = new ArrayType(type.getSourcePosition(), type);
+        }
+
+        return type;
+    }
+
+    private List<ReferenceType> parseReferenceTypeList()
+        throws ParserException, IOException
+    {
+        List<ReferenceType> list = new ArrayList<ReferenceType>(3);
+
+        list.add(this.parseReferenceType());
+        while (this.peekRead(Token.Kind.COMMA))
+        {
+            list.add(this.parseReferenceType());
+        }
+
+        return list;
+    }
+
+    /**
+     * <pre>
+     *   TypeParameter:
+     *     Identifier [TypeBound]
+     *
+     *   TypeBound:
+     *     extends TypeVariable
+     *     extends ClassOrInterfaceType {AdditionalBound}
+     *
+     *   AdditionalBound:
+     *     &amp; InterfaceType
+     * </pre>
+     */
+    private TypeParameterDeclaration parseTypeParameter()
+        throws ParserException, IOException
+    {
+        SourcePosition position = this.scanner.getSourcePosition();
+        String name = this.readIdentifier();
+        List<ReferenceType> bounds;
+
+        if (this.peekRead(Token.Kind.KW_EXTENDS))
+        {
+            bounds = new ArrayList<ReferenceType>(3);
+            bounds.add(this.parseReferenceType());
+            while (this.peekRead(Token.Kind.BIT_AND))
+            {
+                bounds.add(this.parseReferenceType());
+            }
+        } else {
+            bounds = Collections.emptyList();
+        }
+
+        return new TypeParameterDeclaration(position, name, bounds);
+    }
+
+    private List<TypeParameterDeclaration> parseTypeParameterList()
+        throws ParserException, IOException
+    {
+        List<TypeParameterDeclaration> list = new ArrayList<TypeParameterDeclaration>(3);
+
+        this.expect(Token.Kind.LT);
+        list.add(this.parseTypeParameter());
+        while (this.peekRead(Token.Kind.COMMA))
+        {
+            list.add(this.parseTypeParameter());
+        }
+        this.expect(Token.Kind.GT);
+
+        return list;
+    }
+
+    /**
+     * <pre>
+     *   TypeArgument:
+     *     ReferenceType
+     *     Wildcard
+     *
+     *   Wildcard:
+     *     ? [WildcardBounds]
+     *
+     *   WildcardBounds:
+     *     extends ReferenceType
+     *     super ReferenceType
+     * </pre>
+     */
+    private TypeArgument parseTypeArgument()
+        throws ParserException, IOException
+    {
+        if (this.peekRead(Token.Kind.CONDITIONAL))
+        {
+            SourcePosition position = this.scanner.getSourcePosition();
+            Wildcard.Kind kind;
+            ReferenceType bound;
+
+            if (this.peekRead(Token.Kind.KW_EXTENDS))
+            {
+                kind = Wildcard.Kind.EXTENDS;
+                bound = this.parseReferenceType();
+            }
+            else if (this.peekRead(Token.Kind.KW_SUPER))
+            {
+                kind = Wildcard.Kind.SUPER;
+                bound = this.parseReferenceType();
+            } else {
+                kind = Wildcard.Kind.UNBOUND;
+                bound = null;
+            }
+
+            return new Wildcard(position, kind, bound);
+        }
+
+        return this.parseReferenceType();
+    }
+
+    private List<TypeArgument> parseTypeArgumentList()
+        throws ParserException, IOException
+    {
+        List<TypeArgument> list = new ArrayList<TypeArgument>(3);
+
+        list.add(this.parseTypeArgument());
+        while (this.peekRead(Token.Kind.COMMA))
+        {
+            list.add(this.parseTypeArgument());
+        }
+
+        return list;
     }
 
     private Expression toExpression(Atom atom)
@@ -953,25 +1205,36 @@ public final class Parser implements SourceLocatable
     private Token read()
         throws ParserException, IOException
     {
+        Token token;
+
         if (this.nextToken == null)
         {
-            if (this.nextButOneToken != null)
+            if (this.nextButOneToken == null)
             {
-                Token token = this.nextButOneToken;
-
+                token = this.scanner.scan();
+            } else {
+                token = this.nextButOneToken;
                 this.nextButOneToken = null;
-
-                return token;
             }
         } else {
-            Token token = this.nextToken;
-
+            token = this.nextToken;
             this.nextToken = null;
-
-            return token;
         }
 
-        return this.scanner.scan();
+        return token;
+    }
+
+    private String readIdentifier()
+        throws ParserException, IOException
+    {
+        Token token = this.read();
+
+        if (token.getKind() == Token.Kind.IDENTIFIER)
+        {
+            return token.getText();
+        }
+
+        throw this.error(token, "unexpected %s; missing identifier", token);
     }
 
     private boolean peek(Token.Kind kind)
@@ -986,8 +1249,6 @@ public final class Parser implements SourceLocatable
                 this.nextToken = this.nextButOneToken;
                 this.nextButOneToken = null;
             }
-        } else {
-            this.nextToken = this.scanner.scan();
         }
 
         return this.nextToken.getKind() == kind;
@@ -1005,8 +1266,6 @@ public final class Parser implements SourceLocatable
                 this.nextToken = this.nextButOneToken;
                 this.nextButOneToken = null;
             }
-        } else {
-            this.nextToken = this.scanner.scan();
         }
         if (this.nextToken.getKind() == first)
         {
@@ -1021,6 +1280,24 @@ public final class Parser implements SourceLocatable
         }
 
         return false;
+    }
+
+    private boolean peek(String identifier)
+        throws ParserException, IOException
+    {
+        if (this.nextToken == null)
+        {
+            if (this.nextButOneToken == null)
+            {
+                this.nextToken = this.scanner.scan();
+            } else {
+                this.nextToken = this.nextButOneToken;
+                this.nextButOneToken = null;
+            }
+        }
+
+        return this.nextToken.getKind() == Token.Kind.IDENTIFIER
+            && this.nextToken.getText().equals(identifier);
     }
 
     private boolean peekRead(Token.Kind kind)

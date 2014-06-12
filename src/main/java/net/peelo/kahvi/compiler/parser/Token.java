@@ -70,57 +70,57 @@ public final class Token implements SourceLocatable, Serializable
         ASSIGN_RSH2("`>>>'"),
 
         // Keywords
-        KEYWORD_ABSTRACT("`abstract'"),
-        KEYWORD_ASSERT("`assert'"),
-        KEYWORD_BOOLEAN("`boolean'"),
-        KEYWORD_BREAK("`break'"),
-        KEYWORD_BYTE("`byte'"),
-        KEYWORD_CASE("`case'"),
-        KEYWORD_CATCH("`catch'"),
-        KEYWORD_CHAR("`char'"),
-        KEYWORD_CLASS("`class'"),
-        KEYWORD_CONTINUE("`continue'"),
-        KEYWORD_DEFAULT("`default'"),
-        KEYWORD_DO("`do'"),
-        KEYWORD_DOUBLE("`double'"),
-        KEYWORD_ELSE("`else'"),
-        KEYWORD_ENUM("`enum'"),
-        KEYWORD_EXTENDS("`extends'"),
-        KEYWORD_FALSE("`false'"),
-        KEYWORD_FINAL("`final'"),
-        KEYWORD_FINALLY("`finally'"),
-        KEYWORD_FLOAT("`float'"),
-        KEYWORD_FOR("`for'"),
-        KEYWORD_IF("`if'"),
-        KEYWORD_IMPLEMENTS("`implements'"),
-        KEYWORD_IMPORT("`import'"),
-        KEYWORD_INSTANCEOF("`instanceof'"),
-        KEYWORD_INT("`int'"),
-        KEYWORD_INTERFACE("`interface'"),
-        KEYWORD_LONG("`long'"),
-        KEYWORD_NATIVE("`native'"),
-        KEYWORD_NEW("`new'"),
-        KEYWORD_NULL("`null'"),
-        KEYWORD_PACKAGE("`package'"),
-        KEYWORD_PRIVATE("`private'"),
-        KEYWORD_PROTECTED("`protected'"),
-        KEYWORD_PUBLIC("`public'"),
-        KEYWORD_RETURN("`return'"),
-        KEYWORD_SHORT("`short'"),
-        KEYWORD_STATIC("`static'"),
-        KEYWORD_STRICTFP("`strictfp'"),
-        KEYWORD_SUPER("`super'"),
-        KEYWORD_SWITCH("`switch'"),
-        KEYWORD_SYNCHRONIZED("`synchronized'"),
-        KEYWORD_THIS("`this'"),
-        KEYWORD_THROW("`throw'"),
-        KEYWORD_THROWS("`throws'"),
-        KEYWORD_TRANSIENT("`transient'"),
-        KEYWORD_TRUE("`true'"),
-        KEYWORD_TRY("`try'"),
-        KEYWORD_VOID("`void'"),
-        KEYWORD_VOLATILE("`volatile'"),
-        KEYWORD_WHILE("`while'");
+        KW_ABSTRACT("`abstract'"),
+        KW_ASSERT("`assert'"),
+        KW_BOOLEAN("`boolean'"),
+        KW_BREAK("`break'"),
+        KW_BYTE("`byte'"),
+        KW_CASE("`case'"),
+        KW_CATCH("`catch'"),
+        KW_CHAR("`char'"),
+        KW_CLASS("`class'"),
+        KW_CONTINUE("`continue'"),
+        KW_DEFAULT("`default'"),
+        KW_DO("`do'"),
+        KW_DOUBLE("`double'"),
+        KW_ELSE("`else'"),
+        KW_ENUM("`enum'"),
+        KW_EXTENDS("`extends'"),
+        KW_FALSE("`false'"),
+        KW_FINAL("`final'"),
+        KW_FINALLY("`finally'"),
+        KW_FLOAT("`float'"),
+        KW_FOR("`for'"),
+        KW_IF("`if'"),
+        KW_IMPLEMENTS("`implements'"),
+        KW_IMPORT("`import'"),
+        KW_INSTANCEOF("`instanceof'"),
+        KW_INT("`int'"),
+        KW_INTERFACE("`interface'"),
+        KW_LONG("`long'"),
+        KW_NATIVE("`native'"),
+        KW_NEW("`new'"),
+        KW_NULL("`null'"),
+        KW_PACKAGE("`package'"),
+        KW_PRIVATE("`private'"),
+        KW_PROTECTED("`protected'"),
+        KW_PUBLIC("`public'"),
+        KW_RETURN("`return'"),
+        KW_SHORT("`short'"),
+        KW_STATIC("`static'"),
+        KW_STRICTFP("`strictfp'"),
+        KW_SUPER("`super'"),
+        KW_SWITCH("`switch'"),
+        KW_SYNCHRONIZED("`synchronized'"),
+        KW_THIS("`this'"),
+        KW_THROW("`throw'"),
+        KW_THROWS("`throws'"),
+        KW_TRANSIENT("`transient'"),
+        KW_TRUE("`true'"),
+        KW_TRY("`try'"),
+        KW_VOID("`void'"),
+        KW_VOLATILE("`volatile'"),
+        KW_WHILE("`while'");
 
         private final String description;
 
@@ -161,28 +161,6 @@ public final class Token implements SourceLocatable, Serializable
     public String getText()
     {
         return this.text;
-    }
-
-    public boolean is(Kind kind)
-    {
-        return this.kind == kind;
-    }
-
-    public boolean is(Kind first, Kind... rest)
-    {
-        if (this.kind == first)
-        {
-            return true;
-        }
-        for (Kind kind : rest)
-        {
-            if (this.kind == kind)
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     @Override
