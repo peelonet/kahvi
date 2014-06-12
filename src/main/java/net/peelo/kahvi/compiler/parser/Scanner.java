@@ -16,8 +16,6 @@ public final class Scanner implements SourceLocatable
     private int nextTokenLineNumber;
     private int nextTokenColumnNumber;
     private boolean crLfPending;
-    private Token nextToken;
-    private Token nextButOneToken;
     private int pushbackChar;
 
     public Scanner(Reader input, int lineNumber, int columnNumber)
@@ -34,100 +32,9 @@ public final class Scanner implements SourceLocatable
     }
 
     /**
-     * Reads next token from the input.
+     * Scans next token from the input.
      */
-    public Token read()
-        throws ParserException, IOException
-    {
-        Token token = this.nextToken;
-
-        if (token == null)
-        {
-            if (this.nextButOneToken == null)
-            {
-                token = this.produce();
-            } else {
-                token = this.nextButOneToken;
-                this.nextButOneToken = null;
-            }
-        }
-        else if (this.nextButOneToken == null)
-        {
-            this.nextToken = null;
-        } else {
-            this.nextToken = this.nextButOneToken;
-            this.nextButOneToken = null;
-        }
-
-        return token;
-    }
-
-    /**
-     * Peeks the next token but doesn't remove it from the input.
-     */
-    public Token peek()
-        throws ParserException, IOException
-    {
-        if (this.nextToken == null)
-        {
-            if (this.nextButOneToken == null)
-            {
-                this.nextToken = this.produce();
-            } else {
-                this.nextToken = this.nextButOneToken;
-                this.nextButOneToken = null;
-            }
-        }
-
-        return this.nextToken;
-    }
-
-    public boolean peekRead(Token.Kind expected)
-        throws ParserException, IOException
-    {
-        if (this.peek().is(expected))
-        {
-            this.nextToken = null;
-
-            return true;
-        }
-
-        return false;
-    }
-
-    public Token peekNextButOne()
-        throws ParserException, IOException
-    {
-        if (this.nextToken == null)
-        {
-            if (this.nextButOneToken == null)
-            {
-                this.nextToken = this.produce();
-            } else {
-                this.nextToken = this.nextButOneToken;
-                this.nextButOneToken = null;
-            }
-        }
-        if (this.nextButOneToken == null)
-        {
-            this.nextButOneToken = this.produce();
-        }
-
-        return this.nextButOneToken;
-    }
-
-    public void expect(Token.Kind kind)
-        throws ParserException, IOException
-    {
-        Token token = this.read();
-
-        if (token.getKind() != kind)
-        {
-            throw this.error(token, "unexpected %s; missing %s", token, kind);
-        }
-    }
-
-    private Token produce()
+    public Token scan()
         throws IOException
     {
         for (;;)
@@ -450,12 +357,7 @@ public final class Scanner implements SourceLocatable
 
     private ParserException error(String message, Object... args)
     {
-        if (args != null && args.length > 0)
-        {
-            message = String.format(message, (Object[]) args);
-        }
-
-        return new ParserException(this.getSourcePosition(), message);
+        return this.error(null, message, (Object[]) args);
     }
 
     private ParserException error(SourceLocatable location,
@@ -468,9 +370,8 @@ public final class Scanner implements SourceLocatable
         }
 
         return new ParserException(
-                location == null
-                ? this.getSourcePosition()
-                : location.getSourcePosition(),
+                location == null ? this.getSourcePosition()
+                                 : location.getSourcePosition(),
                 message
         );
     }

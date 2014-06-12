@@ -25,6 +25,8 @@ import java.util.Set;
 public final class Parser implements SourceLocatable
 {
     private final Scanner scanner;
+    private Token nextToken;
+    private Token nextButOneToken;
 
     public Parser(Scanner scanner)
     {
@@ -55,16 +57,15 @@ public final class Parser implements SourceLocatable
         List<ImportDeclaration> imports = new ArrayList<ImportDeclaration>(3);
         List<TypeDeclaration> typeDeclarations = new ArrayList<TypeDeclaration>(1);
 
-        if (this.scanner.peek().is(Token.Kind.AT)
-            && this.scanner.peekNextButOne().is(Token.Kind.IDENTIFIER))
+        if (this.peek(Token.Kind.AT) && this.peekNextButOne(Token.Kind.IDENTIFIER))
         {
             List<Annotation> annotations = this.parseAnnotationList();
 
-            if (this.scanner.peek().is(Token.Kind.KEYWORD_PACKAGE)
-                && this.scanner.peekNextButOne().is(Token.Kind.IDENTIFIER))
+            if (this.peek(Token.Kind.KEYWORD_PACKAGE)
+                && this.peekNextButOne(Token.Kind.IDENTIFIER))
             {
                 packageDeclaration = this.parsePackageDeclaration(annotations);
-                while (this.scanner.peek().is(Token.Kind.KEYWORD_IMPORT))
+                while (this.peek(Token.Kind.KEYWORD_IMPORT))
                 {
                     imports.add(this.parseImportDeclaration());
                 }
@@ -72,19 +73,19 @@ public final class Parser implements SourceLocatable
                 typeDeclarations.add(this.parseTypeDeclaration(this.parseModifiers(annotations)));
             }
         } else {
-            if (this.scanner.peek().is(Token.Kind.KEYWORD_PACKAGE)
-                && this.scanner.peekNextButOne().is(Token.Kind.IDENTIFIER))
+            if (this.peek(Token.Kind.KEYWORD_PACKAGE)
+                && this.peekNextButOne(Token.Kind.IDENTIFIER))
             {
                 packageDeclaration = this.parsePackageDeclaration(
                         Collections.<Annotation>emptyList()
                 );
             }
-            while (this.scanner.peek().is(Token.Kind.KEYWORD_IMPORT))
+            while (this.peek(Token.Kind.KEYWORD_IMPORT))
             {
                 imports.add(this.parseImportDeclaration());
             }
         }
-        while (!this.scanner.peek().is(Token.Kind.EOF))
+        while (!this.peek(Token.Kind.EOF))
         {
             typeDeclarations.add(this.parseTypeDeclaration(this.parseModifiers()));
         }
@@ -102,9 +103,9 @@ public final class Parser implements SourceLocatable
         SourcePosition position = this.scanner.getSourcePosition();
         Name packageName;
 
-        this.scanner.expect(Token.Kind.KEYWORD_PACKAGE);
+        this.expect(Token.Kind.KEYWORD_PACKAGE);
         packageName = this.parseQualifiedIdentifier();
-        this.scanner.expect(Token.Kind.SEMICOLON);
+        this.expect(Token.Kind.SEMICOLON);
 
         return new PackageDeclaration(position, annotations, packageName);
     }
@@ -117,25 +118,24 @@ public final class Parser implements SourceLocatable
         Name className;
         boolean onDemand;
 
-        this.scanner.expect(Token.Kind.KEYWORD_IMPORT);
-        if (this.scanner.peek().is(Token.Kind.KEYWORD_STATIC))
+        this.expect(Token.Kind.KEYWORD_IMPORT);
+        if (this.peek(Token.Kind.KEYWORD_STATIC))
         {
-            this.scanner.read();
+            this.read();
             _static = true;
         } else {
             _static = false;
         }
         className = this.parseQualifiedIdentifier();
-        if (this.scanner.peek().is(Token.Kind.DOT)
-            && this.scanner.peekNextButOne().is(Token.Kind.MUL))
+        if (this.peek(Token.Kind.DOT) && this.peekNextButOne(Token.Kind.MUL))
         {
-            this.scanner.read();
-            this.scanner.read();
+            this.read();
+            this.read();
             onDemand = true;
         } else {
             onDemand = false;
         }
-        this.scanner.expect(Token.Kind.SEMICOLON);
+        this.expect(Token.Kind.SEMICOLON);
 
         return new ImportDeclaration(
                 position,
@@ -148,27 +148,24 @@ public final class Parser implements SourceLocatable
     private TypeDeclaration parseTypeDeclaration(Modifiers modifiers)
         throws ParserException, IOException
     {
-        Token token = this.scanner.peek();
-
-        if (token.is(Token.Kind.KEYWORD_CLASS))
+        if (this.peek(Token.Kind.KEYWORD_CLASS))
         {
             throw this.error("TODO: parse class declaration");
         }
-        else if (token.is(Token.Kind.KEYWORD_INTERFACE))
+        else if (this.peek(Token.Kind.KEYWORD_INTERFACE))
         {
             throw this.error("TODO: parse interface declaration");
         }
-        else if (token.is(Token.Kind.KEYWORD_ENUM))
+        else if (this.peek(Token.Kind.KEYWORD_ENUM))
         {
             throw this.error("TODO: parse enum declaration");
         }
-        else if (token.is(Token.Kind.AT)
-                && this.scanner.peekNextButOne().is(Token.Kind.KEYWORD_INTERFACE))
+        else if (this.peek(Token.Kind.AT) && this.peekNextButOne(Token.Kind.KEYWORD_INTERFACE))
         {
             throw this.error("TODO: parse annotation declaration");
         }
 
-        throw this.error("unexpected %s; missing type declaration", token);
+        throw this.error("unexpected %s; missing type declaration", this.nextToken);
     }
 
     private List<Annotation> parseAnnotationList()
@@ -176,8 +173,7 @@ public final class Parser implements SourceLocatable
     {
         List<Annotation> list = null;
 
-        while (this.scanner.peek().is(Token.Kind.AT)
-                && this.scanner.peekNextButOne().is(Token.Kind.IDENTIFIER))
+        while (this.peek(Token.Kind.AT) && this.peekNextButOne(Token.Kind.IDENTIFIER))
         {
             Annotation annotation = this.parseAnnotation();
 
@@ -218,13 +214,13 @@ public final class Parser implements SourceLocatable
         SourcePosition position = this.scanner.getSourcePosition();
         Name className;
 
-        this.scanner.expect(Token.Kind.AT);
+        this.expect(Token.Kind.AT);
         className = this.parseQualifiedIdentifier();
-        if (this.scanner.peek().is(Token.Kind.LPAREN))
+        if (this.peek(Token.Kind.LPAREN))
         {
-            this.scanner.read();
-            if (this.scanner.peek().is(Token.Kind.IDENTIFIER)
-                && this.scanner.peekNextButOne().is(Token.Kind.ASSIGN))
+            this.read();
+            if (this.peek(Token.Kind.IDENTIFIER)
+                && this.peekNextButOne(Token.Kind.ASSIGN))
             {
                 throw this.error("TODO: parse normal annotation");
             } else {
@@ -246,11 +242,11 @@ public final class Parser implements SourceLocatable
     private ElementValue parseElementValue()
         throws ParserException, IOException
     {
-        if (this.scanner.peek().is(Token.Kind.LBRACE))
+        if (this.peek(Token.Kind.LBRACE))
         {
             return this.parseElementValueArrayInitializer();
         }
-        else if (this.scanner.peek().is(Token.Kind.AT))
+        else if (this.peek(Token.Kind.AT))
         {
             return this.parseAnnotation();
         } else {
@@ -272,8 +268,8 @@ public final class Parser implements SourceLocatable
     {
         List<ElementValue> list = null;
 
-        this.scanner.expect(Token.Kind.LBRACE);
-        while (!this.scanner.peek().is(Token.Kind.RBRACE))
+        this.expect(Token.Kind.LBRACE);
+        while (!this.peek(Token.Kind.RBRACE))
         {
             ElementValue value = this.parseElementValue();
 
@@ -282,14 +278,14 @@ public final class Parser implements SourceLocatable
                 list = new ArrayList<ElementValue>(3);
             }
             list.add(value);
-            if (this.scanner.peek().is(Token.Kind.COMMA))
+            if (this.peek(Token.Kind.COMMA))
             {
-                this.scanner.read();
+                this.read();
             } else {
                 break;
             }
         }
-        this.scanner.expect(Token.Kind.RBRACE);
+        this.expect(Token.Kind.RBRACE);
         if (list == null)
         {
             list = Collections.emptyList();
@@ -301,19 +297,18 @@ public final class Parser implements SourceLocatable
     private Name parseQualifiedIdentifier()
         throws ParserException, IOException
     {
-        Token token = this.scanner.read();
+        Token token = this.read();
         Name result;
 
         if (!token.is(Token.Kind.IDENTIFIER))
         {
-            throw this.error("unexpected %s; missing identifier", token);
+            throw this.error(token, "unexpected %s; missing identifier", token);
         }
         result = new Name(null, token.getText());
-        while (this.scanner.peek().is(Token.Kind.DOT)
-                && this.scanner.peekNextButOne().is(Token.Kind.IDENTIFIER))
+        while (this.peek(Token.Kind.DOT) && this.peekNextButOne(Token.Kind.IDENTIFIER))
         {
-            this.scanner.read();
-            result = new Name(result, this.scanner.read().getText());
+            this.read();
+            result = new Name(result, this.read().getText());
         }
         
         return result;
@@ -333,7 +328,7 @@ public final class Parser implements SourceLocatable
 
         for (;;)
         {
-            if (this.scanner.peekRead(Token.Kind.KEYWORD_PUBLIC))
+            if (this.peekRead(Token.Kind.KEYWORD_PUBLIC))
             {
                 if (visibility != null)
                 {
@@ -341,7 +336,7 @@ public final class Parser implements SourceLocatable
                 }
                 visibility = Visibility.PUBLIC;
             }
-            else if (this.scanner.peekRead(Token.Kind.KEYWORD_PROTECTED))
+            else if (this.peekRead(Token.Kind.KEYWORD_PROTECTED))
             {
                 if (visibility != null)
                 {
@@ -349,7 +344,7 @@ public final class Parser implements SourceLocatable
                 }
                 visibility = Visibility.PROTECTED;
             }
-            else if (this.scanner.peekRead(Token.Kind.KEYWORD_PRIVATE))
+            else if (this.peekRead(Token.Kind.KEYWORD_PRIVATE))
             {
                 if (visibility != null)
                 {
@@ -357,7 +352,7 @@ public final class Parser implements SourceLocatable
                 }
                 visibility = Visibility.PRIVATE;
             }
-            else if (this.scanner.peekRead(Token.Kind.KEYWORD_PACKAGE))
+            else if (this.peekRead(Token.Kind.KEYWORD_PACKAGE))
             {
                 if (visibility != null)
                 {
@@ -367,11 +362,11 @@ public final class Parser implements SourceLocatable
             } else {
                 Flag flag;
 
-                if (this.scanner.peekRead(Token.Kind.KEYWORD_STATIC))
+                if (this.peekRead(Token.Kind.KEYWORD_STATIC))
                 {
                     flag = Flag.STATIC;
                 }
-                else if (this.scanner.peekRead(Token.Kind.KEYWORD_ABSTRACT))
+                else if (this.peekRead(Token.Kind.KEYWORD_ABSTRACT))
                 {
                     if (flags.contains(Flag.FINAL))
                     {
@@ -383,7 +378,7 @@ public final class Parser implements SourceLocatable
                     }
                     flag = Flag.ABSTRACT;
                 }
-                else if (this.scanner.peekRead(Token.Kind.KEYWORD_FINAL))
+                else if (this.peekRead(Token.Kind.KEYWORD_FINAL))
                 {
                     if (flags.contains(Flag.ABSTRACT))
                     {
@@ -391,7 +386,7 @@ public final class Parser implements SourceLocatable
                     }
                     flag = Flag.FINAL;
                 }
-                else if (this.scanner.peekRead(Token.Kind.KEYWORD_NATIVE))
+                else if (this.peekRead(Token.Kind.KEYWORD_NATIVE))
                 {
                     if (flags.contains(Flag.ABSTRACT))
                     {
@@ -399,19 +394,19 @@ public final class Parser implements SourceLocatable
                     }
                     flag = Flag.NATIVE;
                 }
-                else if (this.scanner.peekRead(Token.Kind.KEYWORD_SYNCHRONIZED))
+                else if (this.peekRead(Token.Kind.KEYWORD_SYNCHRONIZED))
                 {
                     flag = Flag.SYNCHRONIZED;
                 }
-                else if (this.scanner.peekRead(Token.Kind.KEYWORD_TRANSIENT))
+                else if (this.peekRead(Token.Kind.KEYWORD_TRANSIENT))
                 {
                     flag = Flag.TRANSIENT;
                 }
-                else if (this.scanner.peekRead(Token.Kind.KEYWORD_VOLATILE))
+                else if (this.peekRead(Token.Kind.KEYWORD_VOLATILE))
                 {
                     flag = Flag.VOLATILE;
                 }
-                else if (this.scanner.peekRead(Token.Kind.KEYWORD_STRICTFP))
+                else if (this.peekRead(Token.Kind.KEYWORD_STRICTFP))
                 {
                     flag = Flag.STRICTFP;
                 } else {
@@ -455,7 +450,7 @@ public final class Parser implements SourceLocatable
     {
         Atom atom = this.parseConditionalExpression();
 
-        if (this.scanner.peekRead(Token.Kind.ASSIGN))
+        if (this.peekRead(Token.Kind.ASSIGN))
         {
             return new AssignmentExpression(
                     atom.getSourcePosition(),
@@ -463,20 +458,19 @@ public final class Parser implements SourceLocatable
                     this.toExpression(this.parseExpression())
             );
         }
-        else if (this.scanner.peek().is(
-                    Token.Kind.ASSIGN_ADD,
-                    Token.Kind.ASSIGN_SUB,
-                    Token.Kind.ASSIGN_MUL,
-                    Token.Kind.ASSIGN_DIV,
-                    Token.Kind.ASSIGN_MOD,
-                    Token.Kind.ASSIGN_LSH,
-                    Token.Kind.ASSIGN_RSH,
-                    Token.Kind.ASSIGN_RSH2,
-                    Token.Kind.ASSIGN_BIT_AND,
-                    Token.Kind.ASSIGN_BIT_OR,
-                    Token.Kind.ASSIGN_BIT_XOR))
+        else if (this.peek(Token.Kind.ASSIGN_ADD,
+                           Token.Kind.ASSIGN_SUB,
+                           Token.Kind.ASSIGN_MUL,
+                           Token.Kind.ASSIGN_DIV,
+                           Token.Kind.ASSIGN_MOD,
+                           Token.Kind.ASSIGN_LSH,
+                           Token.Kind.ASSIGN_RSH,
+                           Token.Kind.ASSIGN_RSH2,
+                           Token.Kind.ASSIGN_BIT_AND,
+                           Token.Kind.ASSIGN_BIT_OR,
+                           Token.Kind.ASSIGN_BIT_XOR))
         {
-            Token.Kind kind = this.scanner.read().getKind();
+            Token.Kind kind = this.read().getKind();
 
             return new CompoundAssignmentExpression(
                     atom.getSourcePosition(),
@@ -504,13 +498,13 @@ public final class Parser implements SourceLocatable
     {
         Atom atom = this.parseConditionalOrExpression();
 
-        if (this.scanner.peekRead(Token.Kind.CONDITIONAL))
+        if (this.peekRead(Token.Kind.CONDITIONAL))
         {
             Expression condition = this.toExpression(atom);
-            Expression trueExpression;
+            Expression trueExpression = this.toExpression(this.parseExpression());
             Expression falseExpression;
 
-            trueExpression = this.toExpression(this.parseExpression());
+            this.expect(Token.Kind.COLON);
             falseExpression = this.toExpression(this.parseConditionalExpression());
 
             return new ConditionalExpression(
@@ -536,7 +530,7 @@ public final class Parser implements SourceLocatable
     {
         Atom atom = this.parseConditionalAndExpression();
 
-        while (this.scanner.peekRead(Token.Kind.OR))
+        while (this.peekRead(Token.Kind.OR))
         {
             atom = new BinaryExpression(
                     atom.getSourcePosition(),
@@ -561,7 +555,7 @@ public final class Parser implements SourceLocatable
     {
         Atom atom = this.parseInclusiveOrExpression();
 
-        while (this.scanner.peekRead(Token.Kind.AND))
+        while (this.peekRead(Token.Kind.AND))
         {
             atom = new BinaryExpression(
                     atom.getSourcePosition(),
@@ -586,7 +580,7 @@ public final class Parser implements SourceLocatable
     {
         Atom atom = this.parseExclusiveOrExpression();
 
-        while (this.scanner.peekRead(Token.Kind.BIT_OR))
+        while (this.peekRead(Token.Kind.BIT_OR))
         {
             atom = new BinaryExpression(
                     atom.getSourcePosition(),
@@ -611,7 +605,7 @@ public final class Parser implements SourceLocatable
     {
         Atom atom = this.parseAndExpression();
 
-        while (this.scanner.peekRead(Token.Kind.BIT_XOR))
+        while (this.peekRead(Token.Kind.BIT_XOR))
         {
             atom = new BinaryExpression(
                     atom.getSourcePosition(),
@@ -636,7 +630,7 @@ public final class Parser implements SourceLocatable
     {
         Atom atom = this.parseEqualityExpression();
 
-        while (this.scanner.peekRead(Token.Kind.BIT_AND))
+        while (this.peekRead(Token.Kind.BIT_AND))
         {
             atom = new BinaryExpression(
                     atom.getSourcePosition(),
@@ -662,9 +656,9 @@ public final class Parser implements SourceLocatable
     {
         Atom atom = this.parseRelationalExpression();
 
-        while (this.scanner.peek().is(Token.Kind.EQ, Token.Kind.NE))
+        while (this.peek(Token.Kind.EQ, Token.Kind.NE))
         {
-            Token.Kind kind = this.scanner.read().getKind();
+            Token.Kind kind = this.read().getKind();
 
             atom = new BinaryExpression(
                     atom.getSourcePosition(),
@@ -697,13 +691,12 @@ public final class Parser implements SourceLocatable
 
         for (;;)
         {
-            if (this.scanner.peek().is(
-                        Token.Kind.LT,
-                        Token.Kind.GT,
-                        Token.Kind.LTE,
-                        Token.Kind.GTE))
+            if (this.peek(Token.Kind.LT,
+                          Token.Kind.GT,
+                          Token.Kind.LTE,
+                          Token.Kind.GTE))
             {
-                Token.Kind kind = this.scanner.read().getKind();
+                Token.Kind kind = this.read().getKind();
 
                 atom = new BinaryExpression(
                         atom.getSourcePosition(),
@@ -715,7 +708,7 @@ public final class Parser implements SourceLocatable
                         this.toExpression(this.parseShiftExpression())
                 );
             }
-            else if (this.scanner.peek().is(Token.Kind.KEYWORD_INSTANCEOF))
+            else if (this.peekRead(Token.Kind.KEYWORD_INSTANCEOF))
             {
                 atom = new InstanceOfExpression(
                         atom.getSourcePosition(),
@@ -742,12 +735,11 @@ public final class Parser implements SourceLocatable
     {
         Atom atom = this.parseAdditiveExpression();
 
-        while (this.scanner.peek().is(
-                    Token.Kind.LSH,
-                    Token.Kind.RSH,
-                    Token.Kind.RSH2))
+        while (this.peek(Token.Kind.LSH,
+                         Token.Kind.RSH,
+                         Token.Kind.RSH2))
         {
-            Token.Kind kind = this.scanner.read().getKind();
+            Token.Kind kind = this.read().getKind();
 
             atom = new BinaryExpression(
                     atom.getSourcePosition(),
@@ -775,9 +767,9 @@ public final class Parser implements SourceLocatable
     {
         Atom atom = this.parseMultiplicativeExpression();
 
-        while (this.scanner.peek().is(Token.Kind.ADD, Token.Kind.SUB))
+        while (this.peek(Token.Kind.ADD, Token.Kind.SUB))
         {
-            Token.Kind kind = this.scanner.read().getKind();
+            Token.Kind kind = this.read().getKind();
 
             atom = new BinaryExpression(
                     atom.getSourcePosition(),
@@ -805,12 +797,11 @@ public final class Parser implements SourceLocatable
     {
         Atom atom = this.parseUnaryExpression();
 
-        while (this.scanner.peek().is(
-                    Token.Kind.MUL,
-                    Token.Kind.DIV,
-                    Token.Kind.MOD))
+        while (this.peek(Token.Kind.MUL,
+                         Token.Kind.DIV,
+                         Token.Kind.MOD))
         {
-            Token.Kind kind = this.scanner.read().getKind();
+            Token.Kind kind = this.read().getKind();
 
             atom = new BinaryExpression(
                     atom.getSourcePosition(),
@@ -856,24 +847,23 @@ public final class Parser implements SourceLocatable
     private Type parseType()
         throws ParserException, IOException
     {
-        if (this.scanner.peek().is(
-                    Token.Kind.KEYWORD_BOOLEAN,
-                    Token.Kind.KEYWORD_BYTE,
-                    Token.Kind.KEYWORD_CHAR,
-                    Token.Kind.KEYWORD_DOUBLE,
-                    Token.Kind.KEYWORD_FLOAT,
-                    Token.Kind.KEYWORD_INT,
-                    Token.Kind.KEYWORD_LONG,
-                    Token.Kind.KEYWORD_SHORT))
+        if (this.peek(Token.Kind.KEYWORD_BOOLEAN,
+                      Token.Kind.KEYWORD_BYTE,
+                      Token.Kind.KEYWORD_CHAR,
+                      Token.Kind.KEYWORD_DOUBLE,
+                      Token.Kind.KEYWORD_FLOAT,
+                      Token.Kind.KEYWORD_INT,
+                      Token.Kind.KEYWORD_LONG,
+                      Token.Kind.KEYWORD_SHORT))
         {
             Type type = this.parsePrimitiveType();
 
-            while (this.scanner.peek().is(Token.Kind.LBRACK)
-                    && this.scanner.peekNextButOne().is(Token.Kind.RBRACK))
+            while (this.peek(Token.Kind.LBRACK)
+                    && this.peekNextButOne(Token.Kind.RBRACK))
             {
                 type = new ArrayType(type.getSourcePosition(), type);
-                this.scanner.read();
-                this.scanner.read();
+                this.read();
+                this.read();
             }
 
             return type;
@@ -885,7 +875,7 @@ public final class Parser implements SourceLocatable
     private PrimitiveType parsePrimitiveType()
         throws ParserException, IOException
     {
-        Token token = this.scanner.read();
+        Token token = this.read();
         Primitive kind;
 
         switch (token.getKind())
@@ -923,7 +913,11 @@ public final class Parser implements SourceLocatable
                 break;
 
             default:
-                throw this.error("unexpected %s; missing primitive type", token);
+                throw this.error(
+                        token,
+                        "unexpected %s; missing primitive type",
+                        token
+                );
         }
 
         return new PrimitiveType(token.getSourcePosition(), kind);
@@ -943,7 +937,7 @@ public final class Parser implements SourceLocatable
             return (Expression) atom;
         }
 
-        throw this.error("unexpected %s; missing expression", atom);
+        throw this.error(atom, "unexpected %s; missing expression", atom);
     }
 
     private AssignableExpression toAssignableExpression(Atom atom)
@@ -953,16 +947,144 @@ public final class Parser implements SourceLocatable
             return (AssignableExpression) atom;
         }
 
-        throw this.error("unexpected %s; missing variable", atom);
+        throw this.error(atom, "unexpected %s; missing variable", atom);
+    }
+
+    private Token read()
+        throws ParserException, IOException
+    {
+        if (this.nextToken == null)
+        {
+            if (this.nextButOneToken != null)
+            {
+                Token token = this.nextButOneToken;
+
+                this.nextButOneToken = null;
+
+                return token;
+            }
+        } else {
+            Token token = this.nextToken;
+
+            this.nextToken = null;
+
+            return token;
+        }
+
+        return this.scanner.scan();
+    }
+
+    private boolean peek(Token.Kind kind)
+        throws ParserException, IOException
+    {
+        if (this.nextToken == null)
+        {
+            if (this.nextButOneToken == null)
+            {
+                this.nextToken = this.scanner.scan();
+            } else {
+                this.nextToken = this.nextButOneToken;
+                this.nextButOneToken = null;
+            }
+        } else {
+            this.nextToken = this.scanner.scan();
+        }
+
+        return this.nextToken.getKind() == kind;
+    }
+
+    private boolean peek(Token.Kind first, Token.Kind... rest)
+        throws ParserException, IOException
+    {
+        if (this.nextToken == null)
+        {
+            if (this.nextButOneToken == null)
+            {
+                this.nextToken = this.scanner.scan();
+            } else {
+                this.nextToken = this.nextButOneToken;
+                this.nextButOneToken = null;
+            }
+        } else {
+            this.nextToken = this.scanner.scan();
+        }
+        if (this.nextToken.getKind() == first)
+        {
+            return true;
+        }
+        for (Token.Kind kind : rest)
+        {
+            if (this.nextToken.getKind() == kind)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean peekRead(Token.Kind kind)
+        throws ParserException, IOException
+    {
+        if (this.peek(kind))
+        {
+            this.nextToken = null;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean peekNextButOne(Token.Kind kind)
+        throws ParserException, IOException
+    {
+        if (this.nextButOneToken == null)
+        {
+            if (this.nextToken == null)
+            {
+                this.nextToken = this.scanner.scan();
+            }
+            this.nextButOneToken = this.scanner.scan();
+        }
+
+        return this.nextButOneToken.getKind() == kind;
+    }
+
+    private void expect(Token.Kind expected)
+        throws ParserException, IOException
+    {
+        Token token = this.read();
+
+        if (token.getKind() != expected)
+        {
+            throw this.error(
+                    token,
+                    "unexpected %s; missing %s",
+                    token,
+                    expected
+            );
+        }
     }
 
     private ParserException error(String message, Object... args)
+    {
+        return this.error(null, message, (Object[]) args);
+    }
+
+    private ParserException error(SourceLocatable location,
+                                  String message,
+                                  Object... args)
     {
         if (args != null && args.length > 0)
         {
             message = String.format(message, (Object[]) args);
         }
 
-        return new ParserException(this.scanner.getSourcePosition(), message);
+        return new ParserException(
+                location == null ? this.scanner.getSourcePosition()
+                                 : location.getSourcePosition(),
+                message
+        );
     }
 }
