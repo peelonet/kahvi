@@ -152,7 +152,7 @@ Creates an immutable list of `java.lang.Integer` objects.
 {"foo", "bar", "baz"}
 ~~~~
 
-Creates in immutable set of `java.lang.String` objects.
+Creates an immutable set of `java.lang.String` objects.
 
 ~~~~
 {"foo": 1, "bar": 2, "baz": 3}
@@ -161,7 +161,7 @@ Creates in immutable set of `java.lang.String` objects.
 Creates an immutable map of `java.lang.Integer` objects with `java.lang.String`
 objects as keys.
 
-Type of the collections can be explicitly declared.
+Type of collection can be explicitly declared.
 
 ~~~~
 <Number> [1, 2, 3]
@@ -274,5 +274,58 @@ Return value can be replaced with a `throw` statement to create shorthand
 `throw` statements.
 
 ~~~~
+@Override
 void remove() => throw new UnsupportedOperationException();
+~~~~
+
+## Automatic get/set methods
+
+Getters and setters for fields have a special syntax like in C#
+
+~~~~
+class Person
+{
+    final String name
+    {
+        get()
+        {
+            return this.name;
+        }
+    }
+
+    int age
+    {
+        get()
+        {
+            return this.age;
+        }
+
+        protected set(int age)
+        {
+            this.age = age;
+        }
+    }
+}
+~~~~
+
+Above example creates two fields *name* and *age* and *getName*, *getAge* and
+*setAge* methods for their accessors and mutators.
+
+Bodies of the get/set methods can be omitted in which case the compiler creates
+them automatically.
+
+~~~~
+class Person
+{
+    final String name
+    {
+        get;
+    }
+
+    int age
+    {
+        get;
+        protected set;
+    }
+}
 ~~~~
