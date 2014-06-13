@@ -264,6 +264,10 @@ public final class Scanner implements SourceLocatable
                     if (this.advance('='))
                     {
                         return this.token(Token.Kind.EQ);
+                    }
+                    else if (this.advance('>'))
+                    {
+                        return this.token(Token.Kind.ARROW);
                     } else {
                         return this.token(Token.Kind.ASSIGN);
                     }
