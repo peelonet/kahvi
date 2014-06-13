@@ -273,9 +273,263 @@ public final class Parser implements SourceLocatable
             {
                 throw this.error("TODO: method declaration");
             } else {
-                throw this.error("TODO: field/property declaration");
+                return this.parseFieldDeclaration(modifiers, type, name);
             }
         }
+    }
+
+    private FieldDeclaration parseFieldDeclaration(Modifiers modifiers,
+                                                   Type type,
+                                                   String name)
+        throws ParserException, IOException
+    {
+        VariableInitializer initializer;
+        ReadMethodDeclaration readMethod = null;
+        List<WriteMethodDeclaration> writeMethods = null;
+
+        if (this.peekRead(Token.Kind.ASSIGN))
+        {
+            initializer = this.parseVariableInitializer();
+        } else {
+            initializer = null;
+        }
+        if (this.peekRead(Token.Kind.LBRACE))
+        {
+            while (!this.peekRead(Token.Kind.RBRACE))
+            {
+                Modifiers modifiers2 = this.parseModifiers();
+
+                if (this.peek("get"))
+                {
+                    ReadMethodDeclaration rmd = this.parseReadMethodDeclaration(modifiers2);
+
+                    if (readMethod != null)
+                    {
+                        throw this.error("field has multiple read methods");
+                    }
+                    readMethod = rmd;
+                }
+                else if (this.peek("set"))
+                {
+                    WriteMethodDeclaration wmd = this.parseWriteMethodDeclaration(modifiers2);
+
+                    if (writeMethods == null)
+                    {
+                        writeMethods = new ArrayList<WriteMethodDeclaration>(3);
+                    }
+                } else {
+                    throw this.error(
+                            "unexpected %s; missing property declaration",
+                            this.peek()
+                    );
+                }
+            }
+        } else {
+            this.expect(Token.Kind.SEMICOLON);
+        }
+        if (writeMethods == null)
+        {
+            writeMethods = Collections.emptyList();
+        }
+
+        return new FieldDeclaration(
+                type.getSourcePosition(),
+                modifiers,
+                type,
+                name,
+                initializer,
+                readMethod,
+                writeMethods
+        );
+    }
+
+    private ReadMethodDeclaration parseReadMethodDeclaration(Modifiers modifiers)
+        throws ParserException, IOException
+    {
+        SourcePosition position = this.getSourcePosition();
+        List<ClassType> _throws;
+        List<Expression> preConditions;
+        BlockStatement block;
+
+        this.expect("get");
+        if (this.peekRead(Token.Kind.LPAREN))
+        {
+            this.expect(Token.Kind.RPAREN);
+            if (this.peekRead(Token.Kind.KW_THROWS))
+            {
+                _throws = this.parseClassTypeList();
+            } else {
+                _throws = Collections.emptyList();
+            }
+            preConditions = null;
+            while (this.peekRead("requires"))
+            {
+                Expression condition = this.toExpression(this.parseExpression());
+
+                if (preConditions == null)
+                {
+                    preConditions = new ArrayList<Expression>(3);
+                }
+                preConditions.add(condition);
+            }
+            if (preConditions == null)
+            {
+                preConditions = Collections.emptyList();
+            }
+            block = this.parseMethodBody();
+        } else {
+            _throws = Collections.emptyList();
+            preConditions = Collections.emptyList();
+            block = null;
+            this.expect(Token.Kind.SEMICOLON);
+        }
+
+        return new ReadMethodDeclaration(
+                position,
+                modifiers,
+                _throws,
+                preConditions,
+                block
+        );
+    }
+
+    private WriteMethodDeclaration parseWriteMethodDeclaration(Modifiers modifiers)
+        throws ParserException, IOException
+    {
+        SourcePosition position = this.getSourcePosition();
+        List<ParameterDeclaration> parameters;
+        List<ClassType> _throws;
+        List<Expression> preConditions;
+        BlockStatement block;
+
+        this.expect("set");
+        if (this.peek(Token.Kind.LPAREN))
+        {
+            parameters = this.parseParameterList();
+            if (this.peekRead(Token.Kind.KW_THROWS))
+            {
+                _throws = this.parseClassTypeList();
+            } else {
+                _throws = Collections.emptyList();
+            }
+            preConditions = null;
+            while (this.peekRead("requires"))
+            {
+                Expression condition = this.toExpression(this.parseExpression());
+
+                if (preConditions == null)
+                {
+                    preConditions = new ArrayList<Expression>(3);
+                }
+                preConditions.add(condition);
+            }
+            if (preConditions == null)
+            {
+                preConditions = Collections.emptyList();
+            }
+            block = this.parseMethodBody();
+        } else {
+            parameters = Collections.emptyList();
+            _throws = Collections.emptyList();
+            preConditions = Collections.emptyList();
+            block = null;
+            this.expect(Token.Kind.SEMICOLON);
+        }
+
+        return new WriteMethodDeclaration(
+                position,
+                modifiers,
+                parameters,
+                _throws,
+                preConditions,
+                block
+        );
+    }
+
+    private ParameterDeclaration parseParameter()
+        throws ParserException, IOException
+    {
+        SourcePosition position = this.getSourcePosition();
+        List<Annotation> annotations = this.parseAnnotationList();
+        boolean _final;
+        Type type;
+        boolean variadic;
+        boolean nullable;
+        String name;
+
+        _final = this.peekRead(Token.Kind.KW_FINAL);
+        type = this.parseType();
+        variadic = this.peekRead(Token.Kind.DOT_DOT_DOT);
+        nullable = !this.peekRead(Token.Kind.NOT);
+        name = this.readIdentifier();
+
+        return new ParameterDeclaration(
+                position,
+                annotations,
+                _final,
+                type,
+                variadic,
+                nullable,
+                name
+        );
+    }
+
+    private List<ParameterDeclaration> parseParameterList()
+        throws ParserException, IOException
+    {
+        List<ParameterDeclaration> list = null;
+
+        this.expect(Token.Kind.LPAREN);
+        while (!this.peek(Token.Kind.RPAREN))
+        {
+            ParameterDeclaration parameter = this.parseParameter();
+
+            if (list == null)
+            {
+                list = new ArrayList<ParameterDeclaration>(3);
+            }
+            list.add(parameter);
+            if (parameter.isVariadic() || !this.peekRead(Token.Kind.COMMA))
+            {
+                break;
+            }
+        }
+        this.expect(Token.Kind.RPAREN);
+
+        return list;
+    }
+
+    /**
+     * <pre>
+     *   MethodBody:
+     *     =&gt; Expression ;
+     *     =&gt; ThrowStatement
+     *     Block
+     * </pre>
+     */
+    private BlockStatement parseMethodBody()
+        throws ParserException, IOException
+    {
+        if (this.peekRead(Token.Kind.ARROW))
+        {
+            SourcePosition position = this.read().getSourcePosition();
+            List<Statement> list = new ArrayList<Statement>(1);
+
+            if (this.peek(Token.Kind.KW_THROW))
+            {
+                list.add(this.parseThrowStatement());
+            } else {
+                list.add(new ReturnStatement(
+                            position,
+                            this.toExpression(this.parseExpression())
+                ));
+                this.expect(Token.Kind.SEMICOLON);
+            }
+
+            return new BlockStatement(position, list);
+        }
+
+        return this.parseBlock();
     }
 
     /**
@@ -407,7 +661,7 @@ public final class Parser implements SourceLocatable
     private Name parseQualifiedIdentifier()
         throws ParserException, IOException
     {
-        Name result = new Name(null, this.readIdentifier());
+        Name result = new Name(this.readIdentifier());
 
         while (this.peek(Token.Kind.DOT)
                 && this.peekNextButOne(Token.Kind.IDENTIFIER))
@@ -526,6 +780,575 @@ public final class Parser implements SourceLocatable
         }
     }
 
+    private Statement parseBlockStatement()
+        throws ParserException, IOException
+    {
+        if ((this.peek(Token.Kind.IDENTIFIER)
+            && this.peekNextButOne(Token.Kind.COLON))
+            || (this.peek(Token.Kind.KW_IF,
+                          Token.Kind.KW_FOR,
+                          Token.Kind.KW_WHILE,
+                          Token.Kind.KW_DO,
+                          Token.Kind.KW_TRY,
+                          Token.Kind.KW_SWITCH,
+                          Token.Kind.KW_SYNCHRONIZED,
+                          Token.Kind.KW_RETURN,
+                          Token.Kind.KW_THROW,
+                          Token.Kind.KW_BREAK,
+                          Token.Kind.KW_CONTINUE,
+                          Token.Kind.KW_ASSERT,
+                          Token.Kind.LBRACE,
+                          Token.Kind.SEMICOLON)))
+        {
+            return this.parseStatement();
+        }
+        else if (this.peek(Token.Kind.KW_CLASS))
+        {
+            throw this.error("TODO: local class declaration");
+        }
+        else if (this.peekRead(Token.Kind.KW_FINAL))
+        {
+            SourcePosition position = this.getSourcePosition();
+            Type type;
+            boolean nullable;
+            String name;
+            VariableInitializer initializer;
+            VariableStatement statement;
+
+            if (this.peekRead("var"))
+            {
+                type = null;
+            } else {
+                type = this.parseType();
+            }
+            nullable = !this.peekRead(Token.Kind.NOT);
+            name = this.readIdentifier();
+            if (this.peekRead(Token.Kind.ASSIGN))
+            {
+                initializer = this.parseVariableInitializer();
+            } else {
+                initializer = null;
+            }
+            statement = new VariableStatement(
+                    position,
+                    true,
+                    type,
+                    nullable,
+                    name,
+                    initializer
+            );
+            this.expect(Token.Kind.SEMICOLON);
+
+            return statement;
+        }
+        else if (this.peekRead("var"))
+        {
+            SourcePosition position = this.getSourcePosition();
+            boolean nullable;
+            String name;
+            VariableInitializer initializer;
+            VariableStatement statement;
+
+            nullable = !this.peekRead(Token.Kind.NOT);
+            name = this.readIdentifier();
+            if (this.peekRead(Token.Kind.ASSIGN))
+            {
+                initializer = this.parseVariableInitializer();
+            } else {
+                initializer = null;
+            }
+            statement = new VariableStatement(
+                    position,
+                    false,
+                    null,
+                    nullable,
+                    name,
+                    initializer
+            );
+            this.expect(Token.Kind.SEMICOLON);
+
+            return statement;
+        } else {
+            Atom atom = this.parseExpression();
+
+            if (this.peekRead(Token.Kind.SEMICOLON))
+            {
+                return new ExpressionStatement(
+                        atom.getSourcePosition(),
+                        this.toExpression(atom)
+                );
+            }
+
+            throw this.error("TODO: local variable declaration");
+        }
+    }
+
+    private Statement parseStatement()
+        throws ParserException, IOException
+    {
+        if (this.peek(Token.Kind.IDENTIFIER)
+            && this.peekNextButOne(Token.Kind.COLON))
+        {
+            return this.parseLabeledStatement();
+        }
+        else if (this.peek(Token.Kind.LBRACE))
+        {
+            return this.parseBlock();
+        }
+        else if (this.peek(Token.Kind.KW_IF))
+        {
+            return this.parseIfStatement();
+        }
+        else if (this.peek(Token.Kind.KW_FOR))
+        {
+            return this.parseForStatement();
+        }
+        else if (this.peek(Token.Kind.KW_WHILE))
+        {
+            return this.parseWhileStatement();
+        }
+        else if (this.peek(Token.Kind.KW_DO))
+        {
+            return this.parseDoWhileStatement();
+        }
+        else if (this.peek(Token.Kind.KW_TRY))
+        {
+            return this.parseTryStatement();
+        }
+        else if (this.peek(Token.Kind.KW_SWITCH))
+        {
+            return this.parseSwitchStatement();
+        }
+        else if (this.peek(Token.Kind.KW_SYNCHRONIZED))
+        {
+            return this.parseSynchronizedStatement();
+        }
+        else if (this.peek(Token.Kind.KW_RETURN))
+        {
+            return this.parseReturnStatement();
+        }
+        else if (this.peek(Token.Kind.KW_THROW))
+        {
+            return this.parseThrowStatement();
+        }
+        else if (this.peek(Token.Kind.KW_BREAK))
+        {
+            return this.parseBreakStatement();
+        }
+        else if (this.peek(Token.Kind.KW_CONTINUE))
+        {
+            return this.parseContinueStatement();
+        }
+        else if (this.peek(Token.Kind.KW_ASSERT))
+        {
+            return this.parseAssertStatement();
+        }
+        else if (this.peek(Token.Kind.SEMICOLON))
+        {
+            return this.parseEmptyStatement();
+        } else {
+            return this.parseExpressionStatement();
+        }
+    }
+
+    /**
+     * <pre>
+     *   Block:
+     *     { {Statement} }
+     * </pre>
+     */
+    private BlockStatement parseBlock()
+        throws ParserException, IOException
+    {
+        SourcePosition position = this.getSourcePosition();
+        List<Statement> list = null;
+
+        this.expect(Token.Kind.LBRACE);
+        while (!this.peekRead(Token.Kind.RBRACE))
+        {
+            Statement statement = this.parseBlockStatement();
+
+            if (list == null)
+            {
+                list = new ArrayList<Statement>(3);
+            }
+            list.add(statement);
+        }
+        if (list == null)
+        {
+            list = Collections.emptyList();
+        }
+
+        return new BlockStatement(position, list);
+    }
+
+    /**
+     * <pre>
+     *   LabeledStatement:
+     *     Identifier : Statement
+     * </pre>
+     */
+    private LabeledStatement parseLabeledStatement()
+        throws ParserException, IOException
+    {
+        SourcePosition position = this.getSourcePosition();
+        String label = this.readIdentifier();
+
+        this.expect(Token.Kind.COLON);
+
+        return new LabeledStatement(
+                position,
+                new Name(label),
+                this.parseStatement()
+        );
+    }
+
+    /**
+     * <pre>
+     *   IfStatement:
+     *     if ( Expression ) Statement [else Statement]
+     * </pre>
+     */
+    private IfStatement parseIfStatement()
+        throws ParserException, IOException
+    {
+        SourcePosition position = this.getSourcePosition();
+        Expression condition;
+        Statement thenStatement;
+        Statement elseStatement;
+
+        this.expect(Token.Kind.KW_IF);
+        this.expect(Token.Kind.LPAREN);
+        condition = this.toExpression(this.parseExpression());
+        this.expect(Token.Kind.RPAREN);
+        thenStatement = this.parseStatement();
+        if (this.peekRead(Token.Kind.KW_ELSE))
+        {
+            elseStatement = this.parseStatement();
+        } else {
+            elseStatement = null;
+        }
+
+        return new IfStatement(
+                position,
+                condition,
+                thenStatement,
+                elseStatement
+        );
+    }
+
+    private Statement parseForStatement()
+        throws ParserException, IOException
+    {
+        throw this.error("TODO: parse for statement");
+    }
+
+    /**
+     * <pre>
+     *   WhileStatement:
+     *     while ( Expression ) Statement
+     * </pre>
+     */
+    private WhileStatement parseWhileStatement()
+        throws ParserException, IOException
+    {
+        SourcePosition position = this.getSourcePosition();
+        Expression condition;
+        Statement statement;
+
+        this.expect(Token.Kind.KW_WHILE);
+        this.expect(Token.Kind.LPAREN);
+        condition = this.toExpression(this.parseExpression());
+        this.expect(Token.Kind.RPAREN);
+        statement = this.parseStatement();
+
+        return new WhileStatement(position, condition, statement);
+    }
+
+    /**
+     * <pre>
+     *   DoWhileStatement:
+     *     do Statement while ( Expression ) ;
+     * </pre>
+     */
+    private DoWhileStatement parseDoWhileStatement()
+        throws ParserException, IOException
+    {
+        SourcePosition position = this.getSourcePosition();
+        Statement statement;
+        Expression condition;
+
+        this.expect(Token.Kind.KW_DO);
+        statement = this.parseStatement();
+        this.expect(Token.Kind.KW_WHILE);
+        this.expect(Token.Kind.LPAREN);
+        condition = this.toExpression(this.parseExpression());
+        this.expect(Token.Kind.RPAREN);
+        this.expect(Token.Kind.SEMICOLON);
+
+        return new DoWhileStatement(position, statement, condition);
+    }
+
+    private Statement parseTryStatement()
+        throws ParserException, IOException
+    {
+        throw this.error("TODO: parse try statement");
+    }
+
+    private SwitchStatement parseSwitchStatement()
+        throws ParserException, IOException
+    {
+        SourcePosition position = this.getSourcePosition();
+        Expression expression;
+        List<CaseStatement> cases = new ArrayList<CaseStatement>(3);
+        boolean hasDefault = false;
+
+        this.expect(Token.Kind.KW_SWITCH);
+        this.expect(Token.Kind.LPAREN);
+        expression = this.toExpression(this.parseExpression());
+        this.expect(Token.Kind.RPAREN);
+        this.expect(Token.Kind.LBRACE);
+        while (!this.peekRead(Token.Kind.RBRACE))
+        {
+            SourcePosition position2 = this.getSourcePosition();
+            Expression condition;
+            List<Statement> statements;
+
+            if (this.peekRead(Token.Kind.KW_CASE))
+            {
+                condition = this.toExpression(this.parseExpression());
+            }
+            else if (this.peekRead(Token.Kind.KW_DEFAULT))
+            {
+                if (hasDefault)
+                {
+                    throw this.error("duplicate `default' label");
+                }
+                hasDefault = true;
+                condition = null;
+            } else {
+                throw this.error("`case' or `default' expected");
+            }
+            this.expect(Token.Kind.COLON);
+            statements = new ArrayList<Statement>(3);
+            while (!this.peek(Token.Kind.KW_CASE,
+                              Token.Kind.KW_DEFAULT,
+                              Token.Kind.RBRACE))
+            {
+                statements.add(this.parseBlockStatement());
+            }
+            if (statements.isEmpty())
+            {
+                throw this.error("empty case");
+            }
+            cases.add(new CaseStatement(position2, condition, statements));
+        }
+        if (cases.isEmpty())
+        {
+            throw this.error("no cases in `switch' statement");
+        }
+
+        return new SwitchStatement(position, expression, cases);
+    }
+
+    /**
+     * <pre>
+     *   SynchronizedStatement:
+     *     synchronized ( Expression ) Block
+     * </pre>
+     */
+    private SynchronizedStatement parseSynchronizedStatement()
+        throws ParserException, IOException
+    {
+        SourcePosition position = this.getSourcePosition();
+        Expression expression;
+        BlockStatement block;
+
+        this.expect(Token.Kind.KW_SYNCHRONIZED);
+        this.expect(Token.Kind.LPAREN);
+        expression = this.toExpression(this.parseExpression());
+        this.expect(Token.Kind.RPAREN);
+        block = this.parseBlock();
+
+        return new SynchronizedStatement(position, expression, block);
+    }
+
+    /**
+     * <pre>
+     *   ReturnStatement:
+     *     return [Expression] ;
+     * </pre>
+     */
+    private ReturnStatement parseReturnStatement()
+        throws ParserException, IOException
+    {
+        SourcePosition position = this.getSourcePosition();
+        Expression expression;
+
+        this.expect(Token.Kind.KW_RETURN);
+        if (this.peek(Token.Kind.SEMICOLON))
+        {
+            expression = null;
+        } else {
+            expression = this.toExpression(this.parseExpression());
+        }
+        this.expect(Token.Kind.SEMICOLON);
+
+        return new ReturnStatement(position, expression);
+    }
+
+    /**
+     * <pre>
+     *   ThrowStatement:
+     *     throw Expression ;
+     * </pre>
+     */
+    private ThrowStatement parseThrowStatement()
+        throws ParserException, IOException
+    {
+        SourcePosition position = this.getSourcePosition();
+        Expression expression;
+
+        this.expect(Token.Kind.KW_THROW);
+        expression = this.toExpression(this.parseExpression());
+        this.expect(Token.Kind.SEMICOLON);
+
+        return new ThrowStatement(position, expression);
+    }
+
+    /**
+     * <pre>
+     *   BreakStatement:
+     *     break [Identifier] ;
+     * </pre>
+     */
+    private BreakStatement parseBreakStatement()
+        throws ParserException, IOException
+    {
+        SourcePosition position = this.getSourcePosition();
+        Name label;
+
+        this.expect(Token.Kind.KW_BREAK);
+        if (this.peek(Token.Kind.SEMICOLON))
+        {
+            label = null;
+        } else {
+            label = new Name(this.readIdentifier());
+        }
+        this.expect(Token.Kind.SEMICOLON);
+
+        return new BreakStatement(position, label);
+    }
+
+    /**
+     * <pre>
+     *   ContinueStatement:
+     *     continue [Identifier] ;
+     * </pre>
+     */
+    private ContinueStatement parseContinueStatement()
+        throws ParserException, IOException
+    {
+        SourcePosition position = this.getSourcePosition();
+        Name label;
+
+        this.expect(Token.Kind.KW_CONTINUE);
+        if (this.peek(Token.Kind.SEMICOLON))
+        {
+            label = null;
+        } else {
+            label = new Name(this.readIdentifier());
+        }
+        this.expect(Token.Kind.SEMICOLON);
+
+        return new ContinueStatement(position, label);
+    }
+
+    /**
+     * <pre>
+     *   AssertStatement:
+     *     assert Expression [: Expression] ;
+     * </pre>
+     */
+    private AssertStatement parseAssertStatement()
+        throws ParserException, IOException
+    {
+        SourcePosition position = this.getSourcePosition();
+        Expression condition;
+        Expression detail;
+
+        this.expect(Token.Kind.KW_ASSERT);
+        condition = this.toExpression(this.parseExpression());
+        if (this.peekRead(Token.Kind.COLON))
+        {
+            detail = this.toExpression(this.parseExpression());
+        } else {
+            detail = null;
+        }
+        this.expect(Token.Kind.SEMICOLON);
+
+        return new AssertStatement(position, condition, detail);
+    }
+
+    /**
+     * <pre>
+     *   EmptyStatement:
+     *     ;
+     * </pre>
+     */
+    private EmptyStatement parseEmptyStatement()
+        throws ParserException, IOException
+    {
+        SourcePosition position = this.getSourcePosition();
+        
+        this.expect(Token.Kind.SEMICOLON);
+
+        return new EmptyStatement(position);
+    }
+
+    /**
+     * <pre>
+     *   ExpressionStatement:
+     *     Expression ;
+     * </pre>
+     */
+    private ExpressionStatement parseExpressionStatement()
+        throws ParserException, IOException
+    {
+        Expression expression = this.toExpression(this.parseExpression());
+
+        this.expect(Token.Kind.SEMICOLON);
+
+        return new ExpressionStatement(
+                expression.getSourcePosition(),
+                expression
+        );
+    }
+
+    /**
+     * <pre>
+     *   VariableInitializer:
+     *     ArrayInitializer
+     *     Expression
+     * </pre>
+     */
+    private VariableInitializer parseVariableInitializer()
+        throws ParserException, IOException
+    {
+        if (this.peek(Token.Kind.LBRACE))
+        {
+            throw this.error("TODO: parse array initializer");
+        } else {
+            return this.toExpression(this.parseExpression());
+        }
+    }
+
+    /**
+     * <pre>
+     *   Expression:
+     *     AssignmentExpression
+     * </pre>
+     */
     private Atom parseExpression()
         throws ParserException, IOException
     {
@@ -535,19 +1358,20 @@ public final class Parser implements SourceLocatable
     /**
      * <pre>
      *   AssignmentExpression:
-     *     ConditionalExpression
-     *     AssignmentExpression = Expression
-     *     AssignmentExpression += Expression
-     *     AssignmentExpression -= Expression
-     *     AssignmentExpression *= Expression
-     *     AssignmentExpression /= Expression
-     *     AssignmentExpression %= Expression
-     *     AssignmentExpression &lt;&lt;= Expression
-     *     AssignmentExpression &gt;&gt;= Expression
-     *     AssignmentExpression &gt;&gt;&gt;= Expression
-     *     AssignmentExpression &amp;= Expression
-     *     AssignmentExpression |= Expression
-     *     AssignmentExpression ^= Expression
+     *     ConditionalExpression [AssignmentOperator Expression]
+     *
+     *   AssignmentOperator:
+     *     =
+     *     +=
+     *     -=
+     *     /=
+     *     %=
+     *     &lt;&lt;=
+     *     &gt;&gt;=
+     *     &gt;&gt;&gt;=
+     *     &amp;=
+     *     |=
+     *     ^=
      * </pre>
      */
     private Atom parseAssignmentExpression()
@@ -598,6 +1422,12 @@ public final class Parser implements SourceLocatable
         return atom;
     }
 
+    /**
+     * <pre>
+     *   ConditionalExpression:
+     *     ConditionalOrExpression [? Expression : ConditionalExpression]
+     * </pre>
+     */
     private Atom parseConditionalExpression()
         throws ParserException, IOException
     {
@@ -1247,6 +2077,114 @@ public final class Parser implements SourceLocatable
         throw this.error(atom, "unexpected %s; missing variable", atom);
     }
 
+    private Token peek()
+        throws ParserException, IOException
+    {
+        if (this.nextToken == null)
+        {
+            if (this.nextButOneToken == null)
+            {
+                this.nextToken = this.scanner.scan();
+            } else {
+                this.nextToken = this.nextButOneToken;
+                this.nextButOneToken = null;
+            }
+        }
+
+        return this.nextToken;
+    }
+
+    private boolean peek(Token.Kind expected)
+        throws ParserException, IOException
+    {
+        return this.peek().getKind() == expected;
+    }
+
+    private boolean peek(Token.Kind first, Token.Kind... rest)
+        throws ParserException, IOException
+    {
+        Token.Kind kind = this.peek().getKind();
+
+        if (kind == first)
+        {
+            return true;
+        }
+        for (Token.Kind k : rest)
+        {
+            if (kind == k)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean peek(String identifier)
+        throws ParserException, IOException
+    {
+        Token token = this.peek();
+
+        return token.getKind() == Token.Kind.IDENTIFIER
+            && identifier.equals(token.getText());
+    }
+
+    private boolean peekRead(Token.Kind expected)
+        throws ParserException, IOException
+    {
+        if (this.peek(expected))
+        {
+            this.nextToken = null;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean peekRead(String identifier)
+        throws ParserException, IOException
+    {
+        if (this.peek(identifier))
+        {
+            this.nextToken = null;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private Token peekNextButOne()
+        throws ParserException, IOException
+    {
+        if (this.nextButOneToken == null)
+        {
+            if (this.nextToken == null)
+            {
+                this.nextToken = this.scanner.scan();
+            }
+            this.nextButOneToken = this.scanner.scan();
+        }
+
+        return this.nextButOneToken;
+    }
+
+    private boolean peekNextButOne(Token.Kind expected)
+        throws ParserException, IOException
+    {
+        return this.peekNextButOne().getKind() == expected;
+    }
+
+    private boolean peekNextButOne(String identifier)
+        throws ParserException, IOException
+    {
+        Token token = this.peekNextButOne();
+
+        return token.getKind() == Token.Kind.IDENTIFIER
+            && identifier.equals(token.getText());
+    }
+
     private Token read()
         throws ParserException, IOException
     {
@@ -1282,97 +2220,6 @@ public final class Parser implements SourceLocatable
         throw this.error(token, "unexpected %s; missing identifier", token);
     }
 
-    private boolean peek(Token.Kind kind)
-        throws ParserException, IOException
-    {
-        if (this.nextToken == null)
-        {
-            if (this.nextButOneToken == null)
-            {
-                this.nextToken = this.scanner.scan();
-            } else {
-                this.nextToken = this.nextButOneToken;
-                this.nextButOneToken = null;
-            }
-        }
-
-        return this.nextToken.getKind() == kind;
-    }
-
-    private boolean peek(Token.Kind first, Token.Kind... rest)
-        throws ParserException, IOException
-    {
-        if (this.nextToken == null)
-        {
-            if (this.nextButOneToken == null)
-            {
-                this.nextToken = this.scanner.scan();
-            } else {
-                this.nextToken = this.nextButOneToken;
-                this.nextButOneToken = null;
-            }
-        }
-        if (this.nextToken.getKind() == first)
-        {
-            return true;
-        }
-        for (Token.Kind kind : rest)
-        {
-            if (this.nextToken.getKind() == kind)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private boolean peek(String identifier)
-        throws ParserException, IOException
-    {
-        if (this.nextToken == null)
-        {
-            if (this.nextButOneToken == null)
-            {
-                this.nextToken = this.scanner.scan();
-            } else {
-                this.nextToken = this.nextButOneToken;
-                this.nextButOneToken = null;
-            }
-        }
-
-        return this.nextToken.getKind() == Token.Kind.IDENTIFIER
-            && this.nextToken.getText().equals(identifier);
-    }
-
-    private boolean peekRead(Token.Kind kind)
-        throws ParserException, IOException
-    {
-        if (this.peek(kind))
-        {
-            this.nextToken = null;
-
-            return true;
-        }
-
-        return false;
-    }
-
-    private boolean peekNextButOne(Token.Kind kind)
-        throws ParserException, IOException
-    {
-        if (this.nextButOneToken == null)
-        {
-            if (this.nextToken == null)
-            {
-                this.nextToken = this.scanner.scan();
-            }
-            this.nextButOneToken = this.scanner.scan();
-        }
-
-        return this.nextButOneToken.getKind() == kind;
-    }
-
     private void expect(Token.Kind expected)
         throws ParserException, IOException
     {
@@ -1380,12 +2227,19 @@ public final class Parser implements SourceLocatable
 
         if (token.getKind() != expected)
         {
-            throw this.error(
-                    token,
-                    "unexpected %s; missing %s",
-                    token,
-                    expected
-            );
+            throw this.error(token, "unexpected %s; missing %s", token, expected);
+        }
+    }
+
+    private void expect(String identifier)
+        throws ParserException, IOException
+    {
+        Token token = this.read();
+
+        if (token.getKind() != Token.Kind.IDENTIFIER
+            || !identifier.equals(token.getText()))
+        {
+            throw this.error(token, "unexpected %s; missing `%s'", token, identifier);
         }
     }
 

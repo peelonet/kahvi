@@ -8,12 +8,14 @@ public final class VariableStatement extends Statement
 {
     private final boolean _final;
     private final Type type;
+    private final boolean nullable;
     private final String name;
     private final VariableInitializer initializer;
 
     public VariableStatement(SourcePosition position,
                              boolean _final,
                              Type type,
+                             boolean nullable,
                              String name,
                              VariableInitializer initializer)
     {
@@ -23,6 +25,7 @@ public final class VariableStatement extends Statement
         {
             this.type.setEnclosingScope(this);
         }
+        this.nullable = nullable;
         this.name = name;
         if ((this.initializer = initializer) != null)
         {
@@ -38,6 +41,11 @@ public final class VariableStatement extends Statement
     public Type getType()
     {
         return this.type;
+    }
+
+    public boolean isNullable()
+    {
+        return this.nullable;
     }
 
     public String getName()
@@ -67,11 +75,15 @@ public final class VariableStatement extends Statement
         }
         if (this.type == null)
         {
-            sb.append("var ");
+            sb.append("var");
         } else {
-            sb.append(this.type).append(' ');
+            sb.append(this.type);
         }
-        sb.append(this.name);
+        if (!this.nullable)
+        {
+            sb.append('!');
+        }
+        sb.append(' ').append(this.name);
         if (this.initializer != null)
         {
             sb.append(" = ").append(this.initializer);
