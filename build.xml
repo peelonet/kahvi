@@ -3,7 +3,6 @@
 
   <property name="dir.src" value="src" />
   <property name="dir.build" value="build" />
-  <property name="dir.dist" value="${dir.build}/dist" />
   <property name="dir.javadoc" value="javadoc" />
 
   <target name="compile">
@@ -15,7 +14,7 @@
   </target>
 
   <target name="jar" depends="compile">
-    <jar destfile="${dir.dist}/${ant.project.name}.jar">
+    <jar destfile="${ant.project.name}.jar">
       <fileset dir="${dir.build}/java" />
       <manifest>
         <attribute name="Main-Class" value="net.peelo.kahvi.compiler.Main" />
