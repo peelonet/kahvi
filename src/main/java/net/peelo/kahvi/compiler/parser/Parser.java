@@ -1881,7 +1881,148 @@ public final class Parser implements SourceLocatable
     private Atom parseUnaryExpression()
         throws ParserException, IOException
     {
-        throw this.error("TODO: parse unary expression");
+        if (this.peek(Token.Kind.INC, Token.Kind.DEC))
+        {
+            throw this.error("TODO: parse pre-increment/decrement");
+        }
+        else if (this.peek(Token.Kind.ADD,
+                           Token.Kind.SUB,
+                           Token.Kind.NOT,
+                           Token.Kind.BIT_NOT))
+        {
+            throw this.error("TODO: parse unary operators");
+        } else {
+            Atom atom = this.parsePrimary();
+
+            while (this.peek(Token.Kind.DOT, Token.Kind.LBRACK))
+            {
+                atom = this.parsePostfixExpression(atom);
+            }
+            while (this.peek(Token.Kind.INC, Token.Kind.DEC))
+            {
+                throw this.error("TODO: parse post-increment/decrement");
+            }
+
+            return atom;
+        }
+    }
+
+    private Atom parsePrimary()
+        throws ParserException, IOException
+    {
+        Token token = this.read();
+
+        switch (token.getKind())
+        {
+            case LPAREN:
+                throw this.error("TODO: parse parenthesized expressions");
+
+            case IDENTIFIER:
+            {
+                Name name = new Name(token.getText());
+
+                while (this.peek(Token.Kind.DOT)
+                        && this.peekNextButOne(Token.Kind.IDENTIFIER))
+                {
+                    this.read();
+                    name = new Name(name, this.read().getText());
+                }
+                if (this.peek(Token.Kind.LPAREN))
+                {
+                    throw this.error("TODO: parse method invocation");
+                } else {
+                    throw this.error("TODO: identifier expression");
+                }
+            }
+
+            case KW_THIS:
+                throw this.error("TODO: parse 'this'");
+
+            case KW_SUPER:
+                throw this.error("TODO: parse 'super'");
+
+            case KW_NEW:
+                throw this.error("TODO: parse 'new'");
+
+            case KW_TRUE:
+            case KW_FALSE:
+                return new BooleanLiteralExpression(
+                        token.getSourcePosition(),
+                        token.getKind() == Token.Kind.KW_TRUE
+                );
+
+            case KW_NULL:
+                return new NullLiteralExpression(token.getSourcePosition());
+
+            case LBRACK:
+                throw this.error("TODO: parse list literal");
+
+            case LBRACE:
+                throw this.error("TODO: parse map or set literal");
+
+            case AT:
+                throw this.error("TODO: parse property access");
+
+            case KW_BOOLEAN:
+            case KW_BYTE:
+            case KW_CHAR:
+            case KW_DOUBLE:
+            case KW_FLOAT:
+            case KW_INT:
+            case KW_LONG:
+            case KW_SHORT:
+                return this.parseType();
+
+            case KW_VOID:
+                if (this.peek(Token.Kind.DOT)
+                    && this.peekNextButOne(Token.Kind.KW_CLASS))
+                {
+                    throw this.error("TODO: parse class literal");
+                } else {
+                    throw this.error("`void' encountered in wrong context");
+                }
+
+            case LT:
+            {
+                List<TypeArgument> typeArguments = this.parseTypeArgumentList();
+
+                if (this.peek(Token.Kind.LBRACK)
+                    && typeArguments.size() == 1
+                    && typeArguments.get(0) instanceof ClassType)
+                {
+                    throw this.error("TODO: parse list literal");
+                }
+                else if (this.peek(Token.Kind.LBRACE))
+                {
+                    if (typeArguments.size() == 2
+                        && typeArguments.get(0) instanceof ClassType
+                        && typeArguments.get(1) instanceof ClassType)
+                    {
+                        throw this.error("TODO: parse map literal");
+                    }
+                    else if (typeArguments.size() == 1
+                            && typeArguments.get(0) instanceof ClassType)
+                    {
+                        throw this.error("TODO: parse set literal");
+                    }
+                }
+
+                throw this.error("TODO: parse method invocation");
+            }
+
+            default:
+                throw this.error(
+                        token,
+                        "unexpected %s; missing expression",
+                        token
+                );
+        }
+    }
+
+    private Atom parsePostfixExpression(Atom atom)
+        throws ParserException, IOException
+    {
+        throw this.error("TODO: parse postfix expression");
     }
 
     private Type parseType()
