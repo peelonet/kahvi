@@ -140,7 +140,7 @@ but since JVM ignores annotations which it cannot resolve, the resulting
 ## New literals
 
 As proposed in [Project Coin](http://mail.openjdk.java.net/pipermail/coin-dev/2009-March/001193.html);
-lists, sets and maps have liteal syntax.
+lists, sets and maps have literal syntax.
 
 ~~~~
 [1, 2, 3]
