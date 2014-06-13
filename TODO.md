@@ -17,7 +17,3 @@ Expressions
 - Parenthesized
 - TypeCast
 - Unary
-
-Types
------
-- Parameterized
