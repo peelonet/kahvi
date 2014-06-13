@@ -20,8 +20,6 @@ public interface ClassMirror extends AnnotatedMirror, AccessibleMirror
 
     Name getQualifiedName();
 
-    String getSimpleName();
-
     PackageMirror getPackage();
 
     List<MethodMirror> getMethods();
