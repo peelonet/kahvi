@@ -239,8 +239,45 @@ public final class Parser implements SourceLocatable
         throws ParserException, IOException
     {
         Modifiers modifiers = this.parseModifiers();
+        
+        if (this.peek(Token.Kind.LT))
+        {
+            List<TypeParameterDeclaration> typeParameters = this.parseTypeParameterList();
 
-        if (this.peek(Token.Kind.KW_CLASS))
+            if (className != null
+                && this.peek(className)
+                && this.peekNextButOne(Token.Kind.LPAREN))
+            {
+                throw this.error("TODO: parse constructor declaration");
+            }
+            else if (this.peek(Token.Kind.KW_VOID))
+            {
+                return this.parseMethodDeclaration(
+                        modifiers,
+                        typeParameters,
+                        new VoidType(this.read().getSourcePosition()),
+                        this.readIdentifier()
+                );
+            }
+            else if (this.peek(Token.Kind.IDENTIFIER)
+                    && this.peekNextButOne(Token.Kind.LPAREN))
+            {
+                return this.parseMethodDeclaration(
+                        modifiers,
+                        typeParameters,
+                        null,
+                        this.readIdentifier()
+                );
+            } else {
+                return this.parseMethodDeclaration(
+                        modifiers,
+                        typeParameters,
+                        this.parseType(),
+                        this.readIdentifier()
+                );
+            }
+        }
+        else if (this.peek(Token.Kind.KW_CLASS))
         {
             return this.parseClassDeclaration(modifiers);
         }
@@ -256,22 +293,42 @@ public final class Parser implements SourceLocatable
         {
             throw this.error("TODO: initializer declaration");
         }
-        else if (this.peek(className)
+        else if (className != null
+                && this.peek(className)
                 && this.peekNextButOne(Token.Kind.LPAREN))
         {
             throw this.error("TODO: constructor declaration");
         }
+        else if (this.peek(Token.Kind.KW_VOID))
+        {
+            return this.parseMethodDeclaration(
+                    modifiers,
+                    Collections.<TypeParameterDeclaration>emptyList(),
+                    new VoidType(this.read().getSourcePosition()),
+                    this.readIdentifier()
+            );
+        }
         else if (this.peek(Token.Kind.IDENTIFIER)
                 && this.peekNextButOne(Token.Kind.LPAREN))
         {
-            throw this.error("TODO: method declaration");
+            return this.parseMethodDeclaration(
+                    modifiers,
+                    Collections.<TypeParameterDeclaration>emptyList(),
+                    null,
+                    this.readIdentifier()
+            );
         } else {
             Type type = this.parseType();
             String name = this.readIdentifier();
 
             if (this.peek(Token.Kind.LPAREN))
             {
-                throw this.error("TODO: method declaration");
+                return this.parseMethodDeclaration(
+                        modifiers,
+                        Collections.<TypeParameterDeclaration>emptyList(),
+                        type,
+                        name
+                );
             } else {
                 return this.parseFieldDeclaration(modifiers, type, name);
             }
@@ -343,6 +400,59 @@ public final class Parser implements SourceLocatable
         );
     }
 
+    private MethodDeclaration parseMethodDeclaration(
+            Modifiers modifiers,
+            List<TypeParameterDeclaration> typeParameters,
+            Type type,
+            String name)
+        throws ParserException, IOException
+    {
+        SourcePosition position = this.getSourcePosition();
+        List<ParameterDeclaration> parameters;
+        List<ClassType> _throws;
+        List<Expression> preConditions;
+        BlockStatement body;
+
+        parameters = this.parseParameterList();
+        if (this.peekRead(Token.Kind.KW_THROWS))
+        {
+            _throws = this.parseClassTypeList();
+        } else {
+            _throws = Collections.emptyList();
+        }
+        preConditions = this.parsePreConditionList();
+        if (this.peekRead(Token.Kind.SEMICOLON))
+        {
+            if (!modifiers.isAbstract() && !modifiers.isNative())
+            {
+                throw this.error(
+                        "non-abstract, non-native methods must have a body"
+                );
+            }
+            body = null;
+        }
+        else if (modifiers.isAbstract() || modifiers.isNative())
+        {
+            throw this.error(
+                    "abstract or native methods must not have a body"
+            );
+        } else {
+            body = this.parseMethodBody();
+        }
+
+        return new MethodDeclaration(
+                position,
+                modifiers,
+                typeParameters,
+                type,
+                name,
+                parameters,
+                _throws,
+                preConditions,
+                body
+        );
+    }
+
     private ReadMethodDeclaration parseReadMethodDeclaration(Modifiers modifiers)
         throws ParserException, IOException
     {
@@ -361,21 +471,7 @@ public final class Parser implements SourceLocatable
             } else {
                 _throws = Collections.emptyList();
             }
-            preConditions = null;
-            while (this.peekRead("requires"))
-            {
-                Expression condition = this.toExpression(this.parseExpression());
-
-                if (preConditions == null)
-                {
-                    preConditions = new ArrayList<Expression>(3);
-                }
-                preConditions.add(condition);
-            }
-            if (preConditions == null)
-            {
-                preConditions = Collections.emptyList();
-            }
+            preConditions = this.parsePreConditionList();
             block = this.parseMethodBody();
         } else {
             _throws = Collections.emptyList();
@@ -412,21 +508,7 @@ public final class Parser implements SourceLocatable
             } else {
                 _throws = Collections.emptyList();
             }
-            preConditions = null;
-            while (this.peekRead("requires"))
-            {
-                Expression condition = this.toExpression(this.parseExpression());
-
-                if (preConditions == null)
-                {
-                    preConditions = new ArrayList<Expression>(3);
-                }
-                preConditions.add(condition);
-            }
-            if (preConditions == null)
-            {
-                preConditions = Collections.emptyList();
-            }
+            preConditions = this.parsePreConditionList();
             block = this.parseMethodBody();
         } else {
             parameters = Collections.emptyList();
@@ -444,6 +526,29 @@ public final class Parser implements SourceLocatable
                 preConditions,
                 block
         );
+    }
+
+    private List<Expression> parsePreConditionList()
+        throws ParserException, IOException
+    {
+        List<Expression> list = null;
+
+        while (this.peekRead("requires"))
+        {
+            Expression expression = this.toExpression(this.parseExpression());
+
+            if (list == null)
+            {
+                list = new ArrayList<Expression>(3);
+            }
+            list.add(expression);
+        }
+        if (list == null)
+        {
+            return Collections.emptyList();
+        } else {
+            return list;
+        }
     }
 
     private ParameterDeclaration parseParameter()
