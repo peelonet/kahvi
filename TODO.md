@@ -10,7 +10,6 @@ Expressions
 -----------
 - ArrayAccess
 - Identifier
-- Literal
 - MemberSelect
 - NewArray
 - NewClass
