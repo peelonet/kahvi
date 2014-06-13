@@ -408,12 +408,11 @@ public final class Parser implements SourceLocatable
         throws ParserException, IOException
     {
         SourcePosition position = this.getSourcePosition();
-        List<ParameterDeclaration> parameters;
+        List<ParameterDeclaration> parameters = this.parseParameterList();
         List<ClassType> _throws;
         List<Expression> preConditions;
         BlockStatement body;
 
-        parameters = this.parseParameterList();
         if (this.peekRead(Token.Kind.KW_THROWS))
         {
             _throws = this.parseClassTypeList();
@@ -600,8 +599,12 @@ public final class Parser implements SourceLocatable
             }
         }
         this.expect(Token.Kind.RPAREN);
-
-        return list;
+        if (list == null)
+        {
+            return Collections.emptyList();
+        } else {
+            return list;
+        }
     }
 
     /**
@@ -617,7 +620,7 @@ public final class Parser implements SourceLocatable
     {
         if (this.peekRead(Token.Kind.ARROW))
         {
-            SourcePosition position = this.read().getSourcePosition();
+            SourcePosition position = this.getSourcePosition();
             List<Statement> list = new ArrayList<Statement>(1);
 
             if (this.peek(Token.Kind.KW_THROW))
