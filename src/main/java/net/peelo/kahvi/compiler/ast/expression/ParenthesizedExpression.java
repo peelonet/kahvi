@@ -9,6 +9,7 @@ import net.peelo.kahvi.compiler.util.SourcePosition;
  * 
  * <p> For example:
  * <pre>
+ *   ( <em>expression</em> )
  * </pre>
  */
 public final class ParenthesizedExpression extends AssignableExpression
