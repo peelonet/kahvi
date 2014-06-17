@@ -18,6 +18,7 @@ public interface StatementVisitor<R, P>
     R visitSwitchStatement(SwitchStatement s, P p);
     R visitSynchronizedStatement(SynchronizedStatement s, P p);
     R visitThrowStatement(ThrowStatement s, P p);
+    R visitTryStatement(TryStatement s, P p);
     R visitVariableStatement(VariableStatement s, P p);
     R visitWhileStatement(WhileStatement s, P p);
 }

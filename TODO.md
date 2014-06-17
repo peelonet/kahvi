@@ -1,11 +1,6 @@
 AST
 ===
 
-Statements
-----------
-- Catch
-- Try
-
 Expressions
 -----------
 - NewArray
