@@ -10,6 +10,5 @@ Expressions
 -----------
 - NewArray
 - NewClass
-- Parenthesized
 - TypeCast
 - Unary

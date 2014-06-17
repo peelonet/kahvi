@@ -1918,7 +1918,26 @@ public final class Parser implements SourceLocatable
         switch (token.getKind())
         {
             case LPAREN:
-                throw this.error("TODO: parse parenthesized expressions");
+            {
+                Atom atom = this.parseExpression();
+
+                this.expect(Token.Kind.RPAREN);
+                if (this.peek(Token.Kind.IDENTIFIER,
+                              Token.Kind.LPAREN,
+                              Token.Kind.BIT_NOT,
+                              Token.Kind.NOT,
+                              Token.Kind.KW_THIS,
+                              Token.Kind.KW_SUPER,
+                              Token.Kind.KW_NEW)) // TODO: literals also
+                {
+                    throw this.error("TODO: parse type cast expression");
+                }
+
+                return new ParenthesizedExpression(
+                        atom.getSourcePosition(),
+                        this.toExpression(atom)
+                );
+            }
 
             case IDENTIFIER:
                 return new IdentifierExpression(
