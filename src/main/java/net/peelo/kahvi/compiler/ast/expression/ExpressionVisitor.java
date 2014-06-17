@@ -9,5 +9,6 @@ public interface ExpressionVisitor<R, P>
     R visitCompoundAssignmentExpression(CompoundAssignmentExpression e, P p);
     R visitConditionalExpression(ConditionalExpression e, P p);
     R visitInstanceOfExpression(InstanceOfExpression e, P p);
+    R visitMethodInvocationExpression(MethodInvocationExpression e, P p);
     R visitNullLiteralExpression(NullLiteralExpression e, P p);
 }
