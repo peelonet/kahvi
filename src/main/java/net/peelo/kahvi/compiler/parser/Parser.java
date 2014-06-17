@@ -2066,7 +2066,15 @@ public final class Parser implements SourceLocatable
         }
         else if (this.peekRead(Token.Kind.LBRACK))
         {
-            throw this.error("TODO: parse array access expression");
+            Expression index = this.toExpression(this.parseExpression());
+
+            this.expect(Token.Kind.RBRACK);
+
+            return new ArrayAccessExpression(
+                    atom.getSourcePosition(),
+                    this.toExpression(atom),
+                    index
+            );
         }
 
         throw this.error("unexpected %s; missing selector", this.peek());

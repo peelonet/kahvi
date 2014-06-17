@@ -8,7 +8,6 @@ Statements
 
 Expressions
 -----------
-- ArrayAccess
 - NewArray
 - NewClass
 - Parenthesized
