@@ -1940,10 +1940,21 @@ public final class Parser implements SourceLocatable
             }
 
             case IDENTIFIER:
-                return new IdentifierExpression(
-                        token.getSourcePosition(),
-                        token.getText()
-                );
+                if (this.peek(Token.Kind.LPAREN))
+                {
+                    return new MethodInvocationExpression(
+                            token.getSourcePosition(),
+                            null,
+                            Collections.<TypeArgument>emptyList(),
+                            token.getText(),
+                            this.parseArguments()
+                    );
+                } else {
+                    return new IdentifierExpression(
+                            token.getSourcePosition(),
+                            token.getText()
+                    );
+                }
 
             case KW_THIS:
                 throw this.error("TODO: parse 'this'");
@@ -2020,7 +2031,13 @@ public final class Parser implements SourceLocatable
                     }
                 }
 
-                throw this.error("TODO: parse method invocation");
+                return new MethodInvocationExpression(
+                        token.getSourcePosition(),
+                        null,
+                        typeArguments,
+                        this.readIdentifier(),
+                        this.parseArguments()
+                );
             }
 
             default:
@@ -2043,7 +2060,13 @@ public final class Parser implements SourceLocatable
 
                 if (this.peek(Token.Kind.LPAREN))
                 {
-                    throw this.error("TODO: method invocation");
+                    return new MethodInvocationExpression(
+                            atom.getSourcePosition(),
+                            this.toExpression(atom),
+                            Collections.<TypeArgument>emptyList(),
+                            identifier,
+                            this.parseArguments()
+                    );
                 } else {
                     return new MemberSelectExpression(
                             atom.getSourcePosition(),
@@ -2054,9 +2077,13 @@ public final class Parser implements SourceLocatable
             }
             else if (this.peek(Token.Kind.LT))
             {
-                List<TypeArgument> typeArguments = this.parseTypeArgumentList();
-
-                throw this.error("TODO: parse generic method invocation");
+                return new MethodInvocationExpression(
+                        atom.getSourcePosition(),
+                        this.toExpression(atom),
+                        this.parseTypeArgumentList(),
+                        this.readIdentifier(),
+                        this.parseArguments()
+                );
             }
             else if (this.peekRead(Token.Kind.KW_THIS))
             {
@@ -2374,6 +2401,35 @@ public final class Parser implements SourceLocatable
         }
 
         return list;
+    }
+
+    private List<Expression> parseArguments()
+        throws ParserException, IOException
+    {
+        List<Expression> list = null;
+
+        this.expect(Token.Kind.LPAREN);
+        while (!this.peek(Token.Kind.RPAREN))
+        {
+            Expression argument = this.toExpression(this.parseExpression());
+
+            if (list == null)
+            {
+                list = new ArrayList<Expression>(3);
+            }
+            list.add(argument);
+            if (!this.peekRead(Token.Kind.COMMA))
+            {
+                break;
+            }
+        }
+        this.expect(Token.Kind.RPAREN);
+        if (list == null)
+        {
+            return Collections.emptyList();
+        } else {
+            return list;
+        }
     }
 
     private Expression toExpression(Atom atom)
