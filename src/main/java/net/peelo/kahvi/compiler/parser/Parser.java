@@ -1208,7 +1208,7 @@ public final class Parser implements SourceLocatable
     {
         SourcePosition position = this.getSourcePosition();
         Expression expression;
-        List<CaseStatement> cases = new ArrayList<CaseStatement>(3);
+        List<SwitchStatement.Case> cases = new ArrayList<SwitchStatement.Case>(3);
         boolean hasDefault = false;
 
         this.expect(Token.Kind.KW_SWITCH);
@@ -1249,7 +1249,7 @@ public final class Parser implements SourceLocatable
             {
                 throw this.error("empty case");
             }
-            cases.add(new CaseStatement(position2, condition, statements));
+            cases.add(new SwitchStatement.Case(position2, condition, statements));
         }
         if (cases.isEmpty())
         {

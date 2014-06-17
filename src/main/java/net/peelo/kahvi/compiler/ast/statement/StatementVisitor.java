@@ -5,7 +5,6 @@ public interface StatementVisitor<R, P>
     R visitAssertStatement(AssertStatement s, P p);
     R visitBlockStatement(BlockStatement s, P p);
     R visitBreakStatement(BreakStatement s, P p);
-    R visitCaseStatement(CaseStatement s, P p);
     R visitContinueStatement(ContinueStatement s, P p);
     R visitDoWhileStatement(DoWhileStatement s, P p);
     R visitEmptyStatement(EmptyStatement s, P p);

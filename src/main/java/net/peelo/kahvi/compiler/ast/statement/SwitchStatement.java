@@ -1,5 +1,9 @@
 package net.peelo.kahvi.compiler.ast.statement;
 
+import net.peelo.kahvi.compiler.ast.Node;
+import net.peelo.kahvi.compiler.ast.Scope;
+import net.peelo.kahvi.compiler.ast.declaration.ExecutableDeclaration;
+import net.peelo.kahvi.compiler.ast.declaration.TypeDeclaration;
 import net.peelo.kahvi.compiler.ast.expression.Expression;
 import net.peelo.kahvi.compiler.util.SourcePosition;
 
@@ -18,17 +22,17 @@ import java.util.List;
 public final class SwitchStatement extends BreakableStatement
 {
     private final Expression expression;
-    private final List<CaseStatement> cases;
+    private final List<Case> cases;
 
     public SwitchStatement(SourcePosition position,
                            Expression expression,
-                           List<CaseStatement> cases)
+                           List<Case> cases)
     {
         super(position);
         (this.expression = expression).setEnclosingScope(this);
-        for (Statement s : (this.cases = cases))
+        for (Case c : (this.cases = cases))
         {
-            s.setEnclosingScope(this);
+            c.setEnclosingSwitchStatement(this);
         }
     }
 
@@ -37,7 +41,7 @@ public final class SwitchStatement extends BreakableStatement
         return this.expression;
     }
 
-    public List<CaseStatement> getCases()
+    public List<Case> getCases()
     {
         return this.cases;
     }
@@ -52,5 +56,108 @@ public final class SwitchStatement extends BreakableStatement
     public String toString()
     {
         return "switch (" + this.expression + ") {...}";
+    }
+
+    /**
+     * Representation of a 'case' in a 'switch' statement.
+     *
+     * <p> For example:
+     * <pre>
+     *   case <em>expression</em> :
+     *       <em>statements</em>
+     *
+     *   default :
+     *       <em>statements</em>
+     * </pre>
+     */
+    public static final class Case extends Node implements Scope
+    {
+        private final Expression expression;
+        private final List<Statement> statements;
+        private SwitchStatement enclosingSwitchStatement;
+
+        public Case(SourcePosition position, List<Statement> statements)
+        {
+            this(position, null, statements);
+        }
+
+        public Case(SourcePosition position,
+                    Expression expression,
+                    List<Statement> statements)
+        {
+            super(position);
+            if ((this.expression = expression) != null)
+            {
+                this.expression.setEnclosingScope(this);
+            }
+            for (Statement s : (this.statements = statements))
+            {
+                s.setEnclosingScope(this);
+            }
+        }
+
+        public Expression getExpression()
+        {
+            return this.expression;
+        }
+
+        public List<Statement> getStatements()
+        {
+            return this.statements;
+        }
+
+        public SwitchStatement getEnclosingSwitchStatement()
+        {
+            return this.enclosingSwitchStatement;
+        }
+
+        public synchronized void setEnclosingSwitchStatement(SwitchStatement enclosingSwitchStatement)
+        {
+            if (this.enclosingSwitchStatement != null
+                && this.enclosingSwitchStatement != enclosingSwitchStatement)
+            {
+                throw new IllegalStateException("Enclosing switch statement already set");
+            }
+            this.enclosingSwitchStatement = enclosingSwitchStatement;
+        }
+
+        @Override
+        public Scope getEnclosingScope()
+        {
+            return this.enclosingSwitchStatement;
+        }
+
+        @Override
+        public TypeDeclaration getEnclosingType()
+        {
+            if (this.enclosingSwitchStatement == null)
+            {
+                return null;
+            } else {
+                return this.enclosingSwitchStatement.getEnclosingType();
+            }
+        }
+
+        @Override
+        public ExecutableDeclaration getEnclosingExecutable()
+        {
+            if (this.enclosingSwitchStatement == null)
+            {
+                return null;
+            } else {
+                return this.enclosingSwitchStatement.getEnclosingExecutable();
+            }
+        }
+
+        @Override
+        public String toString()
+        {
+            if (this.expression == null)
+            {
+                return "default:";
+            } else {
+                return "case " + this.expression + ":";
+            }
+        }
     }
 }
