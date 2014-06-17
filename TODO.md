@@ -9,8 +9,6 @@ Statements
 Expressions
 -----------
 - ArrayAccess
-- Identifier
-- MemberSelect
 - NewArray
 - NewClass
 - Parenthesized

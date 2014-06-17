@@ -1,6 +1,9 @@
 package net.peelo.kahvi.compiler.codegen;
 
 import net.peelo.kahvi.compiler.ast.CompilationUnit;
+import net.peelo.kahvi.compiler.ast.declaration.ClassDeclaration;
+import net.peelo.kahvi.compiler.ast.declaration.TypeDeclaration;
+import net.peelo.kahvi.compiler.ast.declaration.TypeDeclarationVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,7 +27,20 @@ public final class CompilerContext
     {
         List<CompiledClass> list = new ArrayList<CompiledClass>();
 
-        // TODO: process all classes in compilation unit
+        for (TypeDeclaration td : this.compilationUnit.getTypeDeclarations())
+        {
+            td.accept(new TypeDeclarationVisitor<Void, List<CompiledClass>>()
+            {
+                @Override
+                public Void visitClassDeclaration(ClassDeclaration cd,
+                                                  List<CompiledClass> list)
+                {
+                    // TODO
+
+                    return null;
+                }
+            }, list);
+        }
 
         return list;
     }

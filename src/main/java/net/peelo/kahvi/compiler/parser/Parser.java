@@ -1921,22 +1921,10 @@ public final class Parser implements SourceLocatable
                 throw this.error("TODO: parse parenthesized expressions");
 
             case IDENTIFIER:
-            {
-                Name name = new Name(token.getText());
-
-                while (this.peek(Token.Kind.DOT)
-                        && this.peekNextButOne(Token.Kind.IDENTIFIER))
-                {
-                    this.read();
-                    name = new Name(name, this.read().getText());
-                }
-                if (this.peek(Token.Kind.LPAREN))
-                {
-                    throw this.error("TODO: parse method invocation");
-                } else {
-                    throw this.error("TODO: identifier expression");
-                }
-            }
+                return new IdentifierExpression(
+                        token.getSourcePosition(),
+                        token.getText()
+                );
 
             case KW_THIS:
                 throw this.error("TODO: parse 'this'");
@@ -1964,7 +1952,10 @@ public final class Parser implements SourceLocatable
                 throw this.error("TODO: parse map or set literal");
 
             case AT:
-                throw this.error("TODO: parse property access");
+                return new PropertyExpression(
+                        token.getSourcePosition(),
+                        this.readIdentifier()
+                );
 
             case KW_BOOLEAN:
             case KW_BYTE:
@@ -2025,7 +2016,60 @@ public final class Parser implements SourceLocatable
     private Atom parsePostfixExpression(Atom atom)
         throws ParserException, IOException
     {
-        throw this.error("TODO: parse postfix expression");
+        if (this.peekRead(Token.Kind.DOT))
+        {
+            if (this.peek(Token.Kind.IDENTIFIER))
+            {
+                String identifier = this.readIdentifier();
+
+                if (this.peek(Token.Kind.LPAREN))
+                {
+                    throw this.error("TODO: method invocation");
+                } else {
+                    return new MemberSelectExpression(
+                            atom.getSourcePosition(),
+                            this.toExpression(atom),
+                            identifier
+                    );
+                }
+            }
+            else if (this.peek(Token.Kind.LT))
+            {
+                List<TypeArgument> typeArguments = this.parseTypeArgumentList();
+
+                throw this.error("TODO: parse generic method invocation");
+            }
+            else if (this.peekRead(Token.Kind.KW_THIS))
+            {
+                throw this.error("TODO: parse qualified 'this' expression");
+            }
+            else if (this.peekRead(Token.Kind.KW_SUPER))
+            {
+                throw this.error("TODO: parse super constructor invocation");
+            }
+            else if (this.peekRead(Token.Kind.KW_NEW))
+            {
+                throw this.error("TODO: parse qualified 'new' expression");
+            }
+            else if (this.peekRead(Token.Kind.KW_CLASS))
+            {
+                throw this.error("TODO: parse class literal");
+            }
+            else if (this.peekRead(Token.Kind.AT))
+            {
+                return new PropertyExpression(
+                        atom.getSourcePosition(),
+                        this.toExpression(atom),
+                        this.readIdentifier()
+                );
+            }
+        }
+        else if (this.peekRead(Token.Kind.LBRACK))
+        {
+            throw this.error("TODO: parse array access expression");
+        }
+
+        throw this.error("unexpected %s; missing selector", this.peek());
     }
 
     private Type parseType()
