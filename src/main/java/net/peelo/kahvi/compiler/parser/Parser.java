@@ -985,9 +985,29 @@ public final class Parser implements SourceLocatable
                         atom.getSourcePosition(),
                         this.toExpression(atom)
                 );
-            }
+            } else {
+                Type type = this.toType(atom);
+                boolean nullable = !this.peekRead(Token.Kind.NOT);
+                String name = this.readIdentifier();
+                VariableInitializer initializer;
 
-            throw this.error("TODO: local variable declaration");
+                if (this.peekRead(Token.Kind.ASSIGN))
+                {
+                    initializer = this.parseVariableInitializer();
+                } else {
+                    initializer = null;
+                }
+                this.expect(Token.Kind.SEMICOLON);
+
+                return new VariableStatement(
+                        type.getSourcePosition(),
+                        false,
+                        type,
+                        nullable,
+                        name,
+                        initializer
+                );
+            }
         }
     }
 
@@ -2099,7 +2119,10 @@ public final class Parser implements SourceLocatable
             }
             else if (this.peekRead(Token.Kind.KW_CLASS))
             {
-                throw this.error("TODO: parse class literal");
+                return new ClassLiteralExpression(
+                        atom.getSourcePosition(),
+                        this.toType(atom)
+                );
             }
             else if (this.peekRead(Token.Kind.AT))
             {
@@ -2451,6 +2474,16 @@ public final class Parser implements SourceLocatable
         }
 
         throw this.error(atom, "unexpected %s; missing variable", atom);
+    }
+
+    private Type toType(Atom atom)
+    {
+        if (atom instanceof Type)
+        {
+            return (Type) atom;
+        }
+
+        throw this.error(atom, "unexpected %s; missing type", atom);
     }
 
     private Token peek()
